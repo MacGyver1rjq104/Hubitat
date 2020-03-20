@@ -424,21 +424,25 @@ void componentModeWakeUp(cd, BigDecimal wakeUpDuration, BigDecimal level) {
 }
 
 void componentSetSpeed(cd, String fanspeed) {
+    String fanCommand = "FanSpeed"
+    if(device.currentValue('module') == "[54:Tuya MCU]") {
+        fanCommand = "Dimmer"
+    }
     switch(fanspeed) {
         case "off":
-            getAction(getCommandString("FanSpeed", "0"))
+            getAction(getCommandString(fanCommand, "0"))
             break
         case "on":
         case "low":
-            getAction(getCommandString("FanSpeed", "1"))
+            getAction(getCommandString(fanCommand, "1"))
             break
         case "medium-low":
         case "medium":  
-            getAction(getCommandString("FanSpeed", "2"))
+            getAction(getCommandString(fanCommand, "2"))
             break
         case "medium-high":
         case "high":
-            getAction(getCommandString("FanSpeed", "3"))
+            getAction(getCommandString(fanCommand, "3"))
             break
     }  
 }

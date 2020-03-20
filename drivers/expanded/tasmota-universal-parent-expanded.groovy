@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0302Tb
+ *  Code Version: v1.0.0320Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -300,26 +300,35 @@ TreeMap getDeviceConfigurations() {
          installCommands: [["WebLog", "2"]],
          deviceLink: ''],
         
-        // Tasmota Drivers WITH their own base-file
         [typeId: 'tuyamcu-touch-switch-1-button',
         name: 'TuyaMCU Touch Switch - 1 button',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,0"], 
-                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
+
+        // {"NAME":"Lucci Fan","GPIO":[0,107,0,108,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":44}
+        [typeId: 'tuyamcu-lucci-connect-remote-as-switches',
+        name: 'TuyaMCU Lucci Connect Remote',
+        template: '{"NAME":"Lucci Fan","GPIO":[0,0,0,0,0,0,0,0,0,108,0,107,0],"FLAG":0,"BASE":54}',
+        installCommands: [["TuyaMCU", "11,102"], ["TuyaMCU", "12,1"], ["TuyaMCU", "13,0"], 
+                          ["TuyaMCU", "14,0"], ["TuyaMCU", "15,0"], ["TuyaMCU", "21,50"], 
+                          ["Rule1", "on TuyaReceived#Data=55AA00070005020400010012 do dimmer 1 endon on TuyaReceived#Data=55AA00070005020400010113 do dimmer 2 endon on TuyaReceived#Data=55AA00070005020400010214 do dimmer 3 endon on Dimmer#State=1 do TuyaSend4 2,0 endon on Dimmer#State=2 do TuyaSend4 2,1 endon on Dimmer#State=3 do TuyaSend4 2,2 endon"], 
+                          ["Rule1", "1"]],
+        deviceLink: 'https://templates.blakadder.com/luci-connect-remote-control.html'],
 
         [typeId: 'tuyamcu-touch-switch-2-button',
         name: 'TuyaMCU Touch Switch - 2 buttons',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
 
         [typeId: 'tuyamcu-touch-switch-3-button',
         name: 'TuyaMCU Touch Switch - 3 buttons',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
 
         [typeId: 'tuyamcu-touch-switch-4-button',
@@ -327,7 +336,7 @@ TreeMap getDeviceConfigurations() {
         module: 54,
         template: '',
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,4"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,4"]],
         deviceLink: ''],
 
         [typeId: 'sonoff-powr2', 
@@ -1482,21 +1491,25 @@ void componentModeWakeUp(cd, BigDecimal wakeUpDuration, BigDecimal level) {
 }
 
 void componentSetSpeed(cd, String fanspeed) {
+    String fanCommand = "FanSpeed"
+    if(device.currentValue('module') == "[54:Tuya MCU]") {
+        fanCommand = "Dimmer"
+    }
     switch(fanspeed) {
         case "off":
-            getAction(getCommandString("FanSpeed", "0"))
+            getAction(getCommandString(fanCommand, "0"))
             break
         case "on":
         case "low":
-            getAction(getCommandString("FanSpeed", "1"))
+            getAction(getCommandString(fanCommand, "1"))
             break
         case "medium-low":
         case "medium":  
-            getAction(getCommandString("FanSpeed", "2"))
+            getAction(getCommandString(fanCommand, "2"))
             break
         case "medium-high":
         case "high":
-            getAction(getCommandString("FanSpeed", "3"))
+            getAction(getCommandString(fanCommand, "3"))
             break
     }  
 }
@@ -1551,7 +1564,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0302Tb"
+    String version = "v1.0.0320Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

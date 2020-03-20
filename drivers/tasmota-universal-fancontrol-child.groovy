@@ -28,6 +28,13 @@ void parse(List<Map> description) {
         if (it.name in ["speed"]) {
             logging(it.descriptionText, 100)
             sendEvent(it)
+        } else if (it.name in ["level"]) {
+            it.name = "speed"
+            it.descriptionText = "'speed' set to '$it.value'"
+            logging(it.descriptionText, 100)
+            sendEvent(it)
+        } else if (it.name in ["switch"]) {
+            // ignore
         } else {
             log.warn "Got '$it.name' attribute data, but doesn't know what to do with it! Did you choose the right device type?"
         }

@@ -171,26 +171,35 @@ TreeMap getDeviceConfigurations() {
          installCommands: [["WebLog", "2"]],
          deviceLink: ''],
         
-        // Tasmota Drivers WITH their own base-file
         [typeId: 'tuyamcu-touch-switch-1-button',
         name: 'TuyaMCU Touch Switch - 1 button',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,0"], 
-                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
+
+        // {"NAME":"Lucci Fan","GPIO":[0,107,0,108,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":44}
+        [typeId: 'tuyamcu-lucci-connect-remote-as-switches',
+        name: 'TuyaMCU Lucci Connect Remote',
+        template: '{"NAME":"Lucci Fan","GPIO":[0,0,0,0,0,0,0,0,0,108,0,107,0],"FLAG":0,"BASE":54}',
+        installCommands: [["TuyaMCU", "11,102"], ["TuyaMCU", "12,1"], ["TuyaMCU", "13,0"], 
+                          ["TuyaMCU", "14,0"], ["TuyaMCU", "15,0"], ["TuyaMCU", "21,50"], 
+                          ["Rule1", "on TuyaReceived#Data=55AA00070005020400010012 do dimmer 1 endon on TuyaReceived#Data=55AA00070005020400010113 do dimmer 2 endon on TuyaReceived#Data=55AA00070005020400010214 do dimmer 3 endon on Dimmer#State=1 do TuyaSend4 2,0 endon on Dimmer#State=2 do TuyaSend4 2,1 endon on Dimmer#State=3 do TuyaSend4 2,2 endon"], 
+                          ["Rule1", "1"]],
+        deviceLink: 'https://templates.blakadder.com/luci-connect-remote-control.html'],
 
         [typeId: 'tuyamcu-touch-switch-2-button',
         name: 'TuyaMCU Touch Switch - 2 buttons',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,0"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
 
         [typeId: 'tuyamcu-touch-switch-3-button',
         name: 'TuyaMCU Touch Switch - 3 buttons',
         module: 54,
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,0"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,0"]],
         deviceLink: ''],
 
         [typeId: 'tuyamcu-touch-switch-4-button',
@@ -198,7 +207,7 @@ TreeMap getDeviceConfigurations() {
         module: 54,
         template: '',
         installCommands: [["TuyaMCU", "11,1"], ["TuyaMCU", "12,2"], 
-                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,4"], ["SetOption81", "1"]],
+                          ["TuyaMCU", "13,3"], ["TuyaMCU", "14,4"]],
         deviceLink: ''],
 
         [typeId: 'sonoff-powr2', 
