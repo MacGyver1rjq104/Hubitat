@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0320Tb
+ *  Code Version: v1.0.0321Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1491,9 +1491,10 @@ void componentModeWakeUp(cd, BigDecimal wakeUpDuration, BigDecimal level) {
 }
 
 void componentSetSpeed(cd, String fanspeed) {
-    String fanCommand = "FanSpeed"
-    if(device.currentValue('module') == "[54:Tuya MCU]") {
-        fanCommand = "Dimmer"
+    String fanCommand = "Dimmer"
+    String cModule = device.currentValue('module')
+    if(cModule != null && (cModule.startsWith('[44') == true || cModule.startsWith('[71') == true)) {
+        fanCommand = "FanSpeed"
     }
     switch(fanspeed) {
         case "off":
@@ -1564,7 +1565,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0320Tb"
+    String version = "v1.0.0321Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
