@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0321Tb
+ *  Code Version: v1.0.0322Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1565,7 +1565,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0321Tb"
+    String version = "v1.0.0322Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -3115,7 +3115,7 @@ String getMinimizedDriverName(String driverName) {
     }
     // Just replace all Occurrances of Parent
     driverName = driverName.replaceAll("(?i) \\(parent\\)", "").replaceAll("(?i) parent", "").replaceAll("(?i)parent", "")
-    log.debug("driverName: $driverName")
+    logging("driverName: $driverName", 1)
 
     if(driverName.toLowerCase().startsWith('tasmota - ')) {
         driverName = driverName.substring(10, driverName.length())
