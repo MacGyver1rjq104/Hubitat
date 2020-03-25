@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0320Tb
+ *  Code Version: v1.0.0325Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -366,6 +366,14 @@ TreeMap getDeviceConfigurations() {
         ],
         deviceLink: ''],
 
+        [typeId: 'zigbee-controller-default' ,
+        name: 'Zigbee Controller (default pinout)',
+        template: '{"NAME":"Zigbee","GPIO":[0,0,0,0,0,0,0,0,0,166,0,165,0],"FLAG":0,"BASE":18}',
+        installCommands: [["SerialLog", "0"],
+                          ['setoption3', '1'], // enable MQTT - REQUIRED for this Zigbee devices to work!
+                          ],
+        deviceLink: 'https://tasmota.github.io/docs/#/Zigbee'],
+
         [typeId: 'unbranded-rgb-controller-with-ir-type-1' ,
         name: 'Unbranded RGB Controller with IR (Type 1)',
         template: '{"NAME":"RGB Controller","GPIO":[0,0,0,0,0,38,0,0,39,51,0,37,0],"FLAG":15,"BASE":18}',
@@ -576,7 +584,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.0320Tb"
+    String version = "v1.0.0325Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
@@ -2633,7 +2641,7 @@ String getMinimizedDriverName(String driverName) {
     }
     // Just replace all Occurrances of Parent
     driverName = driverName.replaceAll("(?i) \\(parent\\)", "").replaceAll("(?i) parent", "").replaceAll("(?i)parent", "")
-    log.debug("driverName: $driverName")
+    logging("driverName: $driverName", 1)
 
     if(driverName.toLowerCase().startsWith('tasmota - ')) {
         driverName = driverName.substring(10, driverName.length())
