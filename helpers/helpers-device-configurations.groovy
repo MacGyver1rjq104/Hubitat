@@ -305,7 +305,7 @@ TreeMap getDeviceConfigurations() {
         name: 'Zigbee Controller (default pinout)',
         template: '{"NAME":"Zigbee","GPIO":[0,0,0,0,0,0,0,0,0,166,0,165,0],"FLAG":0,"BASE":18}',
         installCommands: [["SerialLog", "0"],
-                          ['setoption3', '1'], // enable MQTT - REQUIRED for this Zigbee devices to work!
+                          //['setoption3', '1'], // enable MQTT - REQUIRED for this Zigbee devices to work!
                           ],
         deviceLink: 'https://tasmota.github.io/docs/#/Zigbee'],
 

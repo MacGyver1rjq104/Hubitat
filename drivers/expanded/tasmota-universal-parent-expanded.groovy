@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0325Tb
+ *  Code Version: v1.0.0329Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -434,7 +434,7 @@ TreeMap getDeviceConfigurations() {
         name: 'Zigbee Controller (default pinout)',
         template: '{"NAME":"Zigbee","GPIO":[0,0,0,0,0,0,0,0,0,166,0,165,0],"FLAG":0,"BASE":18}',
         installCommands: [["SerialLog", "0"],
-                          ['setoption3', '1'], // enable MQTT - REQUIRED for this Zigbee devices to work!
+                          //['setoption3', '1'], // enable MQTT - REQUIRED for this Zigbee devices to work!
                           ],
         deviceLink: 'https://tasmota.github.io/docs/#/Zigbee'],
 
@@ -1573,7 +1573,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0325Tb"
+    String version = "v1.0.0329Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -2736,7 +2736,7 @@ void updatePresence(String presence) {
     // presence - ENUM ["present", "not present"]
     logging("updatePresence(presence=$presence)", 1)
     Integer timeout = getTelePeriodValue()
-    timeout += (timeout * 0.1 > 60 ? Math.round(timeout * 0.1) : 60) + 60
+    timeout += (timeout * 1.1 > 120 ? Math.round(timeout * 1.1) : 120) + 60
     String descriptionText = "No update received from the Tasmota device for ${timeout} seconds..."
     if(presence == "present") {    
         descriptionText = "Device is available"
