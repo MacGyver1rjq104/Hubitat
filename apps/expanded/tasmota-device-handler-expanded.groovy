@@ -359,6 +359,12 @@ TreeMap getDeviceConfigurations() {
         installCommands: [],
         deviceLink: ''],
 
+        [typeId: 'lumary-rgbcct-led-strip', 
+        name: 'Lumary RGBCCT LED Strip ',
+        template: '{"NAME":"Lumary LED","GPIO":[17,0,0,0,37,40,0,0,38,41,39,0,0],"FLAG":0,"BASE":18}',
+        installCommands: [],
+        deviceLink: 'https://templates.blakadder.com/lumary_led_strip.html'],
+
         [typeId: 'tuyamcu-wifi-dimmer', 
         name: 'TuyaMCU Wifi Dimmer',
         module: 54,
