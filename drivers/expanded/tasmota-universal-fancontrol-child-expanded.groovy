@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0320Tb
+ *  Code Version: v1.0.0404Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.security.MessageDigest
 
 metadata {
     // Do NOT rename the child driver name unless you also change the corresponding code in the Parent!
-    definition (name: "Tasmota - Universal Fan Control (Child)", namespace: "tasmota", author: "Markus Liljergren", importURL: "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-fancontrol-child-expanded.groovy") {
+    definition (name: "Tasmota - Universal Fan Control (Child)", namespace: "tasmota", author: "Markus Liljergren", importUrl: "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-fancontrol-child-expanded.groovy") {
         capability "FanControl"
         capability "Refresh"
 
@@ -61,7 +61,7 @@ metadata {
 String getDeviceInfoByName(infoName) { 
     // DO NOT EDIT: This is generated from the metadata!
     // TODO: Figure out how to get this from Hubitat instead of generating this?
-    Map deviceInfo = ['name': 'Tasmota - Universal Fan Control (Child)', 'namespace': 'tasmota', 'author': 'Markus Liljergren', 'importURL': 'https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-fancontrol-child-expanded.groovy']
+    Map deviceInfo = ['name': 'Tasmota - Universal Fan Control (Child)', 'namespace': 'tasmota', 'author': 'Markus Liljergren', 'importUrl': 'https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-fancontrol-child-expanded.groovy']
     //logging("deviceInfo[${infoName}] = ${deviceInfo[infoName]}", 1)
     return(deviceInfo[infoName])
 }
@@ -131,7 +131,7 @@ void setSpeed(String value) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0320Tb"
+    String version = "v1.0.0404Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

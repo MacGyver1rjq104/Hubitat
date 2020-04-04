@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0329Tb
+ *  Code Version: v1.0.0404Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -584,7 +584,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.0329Tb"
+    String version = "v1.0.0404Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }

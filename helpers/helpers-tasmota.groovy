@@ -178,7 +178,7 @@ void updatePresence(String presence) {
     // presence - ENUM ["present", "not present"]
     logging("updatePresence(presence=$presence)", 1)
     Integer timeout = getTelePeriodValue()
-    timeout += (timeout * 0.1 > 60 ? Math.round(timeout * 0.1) : 60) + 60
+    timeout += (timeout * 1.1 > 120 ? Math.round(timeout * 1.1) : 120) + 60
     String descriptionText = "No update received from the Tasmota device for ${timeout} seconds..."
     if(presence == "present") {    
         descriptionText = "Device is available"

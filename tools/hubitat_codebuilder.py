@@ -194,7 +194,7 @@ class HubitatCodeBuilder:
             if(self._alternate_vid != None):
                 definition_dict['vid'] = self._alternate_vid
             if(self.driver_raw_repo_url != None):
-                definition_dict['importURL'] = self.driver_raw_repo_url + str(self._output_groovy_file)
+                definition_dict['importUrl'] = self.driver_raw_repo_url + str(self._output_groovy_file)
             #print(definition_dict)
             # Process this string
             # (name: "Tasmota - Tuya Wifi Touch Switch TEST (Child)", namespace: "tasmota", author: "Markus Liljergren") {
