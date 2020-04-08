@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0404Tb
+ *  Code Version: v1.0.0408Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -206,11 +206,24 @@ TreeMap getDeviceConfigurations() {
                            ['Rule1', '1']],
          deviceLink: 'https://templates.blakadder.com/sonoff_ifan03.html'],
 
+        [typeId: 'treatlife-ds01-dimmer',
+         name: 'TreatLife DS01 Dimmer ',
+         template: '{"NAME":"TL DS01 Dimmer","GPIO":[0,107,0,108,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":54}',
+         installCommands: [["TuyaMCU", "21,2"], 
+                           ["DimmerRange", "150,1000"]],
+         deviceLink: 'https://templates.blakadder.com/kmc-4.html'],
+
         [typeId: 'kmc-4-pm-plug',
          name: 'KMC 4 Power Monitor Plug',
          template: '{"NAME":"KMC 4 Plug","GPIO":[0,56,0,0,133,132,0,0,130,22,23,21,17],"FLAG":0,"BASE":36}',
          installCommands: [],
          deviceLink: 'https://templates.blakadder.com/kmc-4.html'],
+
+        [typeId: 'teckin-ss30-power-strip',
+         name: 'Teckin SS30 Power Strip',
+         template: '{"NAME":"Teckin SS30","GPIO":[52,255,255,57,29,17,0,0,31,30,32,255,25],"FLAG":0,"BASE":18}',
+         installCommands: [],
+         deviceLink: 'https://templates.blakadder.com/teckin_ss30.html'],
 
         [typeId: 'teckin-sp10-plug',
          name: 'Teckin SP10 Plug',
@@ -590,7 +603,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.0404Tb"
+    String version = "v1.0.0408Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
