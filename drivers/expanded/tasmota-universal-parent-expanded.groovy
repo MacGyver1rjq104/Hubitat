@@ -1039,6 +1039,7 @@ boolean parseResult(result, missingChild) {
         sendEvent(name: "ip", value: "$result.IPAddress", isStateChange: false)
         //logging("ipLink: <a target=\"device\" href=\"http://$result.IPAddress\">$result.IPAddress</a>",10)
         sendEvent(name: "ipLink", value: "<a target=\"device\" href=\"http://$result.IPAddress\">$result.IPAddress</a>", isStateChange: false)
+        updateDataValue("ip", "$result.IPAddress")
     }
     if (log99 == true && result.containsKey("WebServerMode")) {
         logging("WebServerMode: $result.WebServerMode",99)
