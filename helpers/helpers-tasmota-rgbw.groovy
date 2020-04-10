@@ -313,6 +313,7 @@ void setEffectWidth(BigDecimal pixels) {
 }
 
 String getCommandStringWithModeReset(String command, String value) {
+    if(useAlternateColorCommand == true && command == "Color1") command = "Var1"
     return getMultiCommandString([[command: "Scheme", value: "0"], [command: "Fade", value: "0"], 
                                   [command: command, value: value]])
 }

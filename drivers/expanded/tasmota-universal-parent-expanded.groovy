@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0410Tb
+ *  Code Version: v1.0.0411Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -97,6 +97,7 @@ metadata {
         
         // END:  getDefaultMetadataPreferencesForTasmota(True) # False = No TelePeriod setting
         input(name: "invertPowerNumber", type: "bool", title: addTitleDiv("Send POWER1 events to POWER2, and vice versa"), description: addDescriptionDiv("Use this if you have a dimmer AND a switch in the same device and on/off is not sent/received correctly. Normally this is NOT needed."), defaultValue: false, displayDuringSetup: false, required: false)
+        input(name: "useAlternateColorCommand", type: "bool", title: addTitleDiv("Use Alternate Color command in Tasmota"), description: addDescriptionDiv("When enabled, this will use \"Var1\" instead of \"Color1\" in order to be able to catch the command in rules. Normally this is NOT needed."), defaultValue: false, displayDuringSetup: false, required: false)
         // BEGIN:getDefaultMetadataPreferencesLast()
         // Default Preferences - Last
         input(name: "hideDangerousCommands", type: "bool", title: addTitleDiv("Hide Dangerous Commands"), description: addDescriptionDiv("Hides Dangerous Commands, such as 'Delete Children'."), defaultValue: true, displayDuringSetup: false, required: false)
@@ -481,6 +482,12 @@ TreeMap getDeviceConfigurations() {
         installCommands: [],
         deviceLink: 'https://templates.blakadder.com/sonoff_4CH_Pro.html'],
 
+        [typeId: 'luminea-zx-2844-rgbw-led-controller',
+        name: 'Luminea ZX-2844 RGBW LED Controller ',
+        template: '{"NAME":"Luminea ZX-284","GPIO":[40,0,0,0,0,39,0,0,38,17,37,0,0],"FLAG":0,"BASE":18}',
+        installCommands: [],
+        deviceLink: 'https://templates.blakadder.com/luminea_zx-2844.html'],
+
         [typeId: 'tuyamcu-znsn-wifi-curtain-wall-panel',
         comment: 'NOT GENERIC - read the instructions',
         name: 'TuyaMCU ZNSN Wifi Curtain Wall Panel',
@@ -552,6 +559,30 @@ TreeMap getDeviceConfigurations() {
         deviceLink: ''],
 
         //https://templates.blakadder.com/oil_diffuser_550ml.html
+
+        
+        [typeId: 'maxcio-diffuser-v1',
+        name: 'Maxcio Diffuser Wood Grain (v1)',
+        template: '{"NAME":"MaxcioDiffuser","GPIO":[0,107,0,108,21,0,0,0,37,38,39,28,0],"FLAG":0,"BASE":54}',
+        // Possible alternative: {"NAME":"MJ-SD02","GPIO":[19,18,0,35,36,34,255,255,33,37,32,126,29],"FLAG":15,"BASE":18}
+        installCommands: [["WebLog", "2"], // A good idea for dimmers
+                        ['SerialLog', '0'],
+                        ['setoption20', '1'], // Update of Dimmer/Color/CT without turning power on
+                        ['TuyaMCU', '21,7'],
+                        ['DimmerRange', '1,255'],
+                        ['SetOption59', '0'],
+                        ['SwitchMode', '1'],
+                        ['SetOption66', '0'],   // Set publishing TuyaReceived to MQTT, 0 = disable, 1 = enable
+                        ['SetOption34', '50'],  // 0..255 = set Backlog inter-command delay in milliseconds (default = 200)
+                        ['Rule1', 'ON Var1#State DO backlog tuyasend3 8,%value%00ffff00; color %value%; rule2 0; power1 1; rule2 1; ENDON'],
+                        ['Rule2', 'ON Power1#State DO tuyasend1 5,%value% ENDON ON Power2#State=0 DO tuyasend1 1,0 ENDON ON Power2#State=1 DO backlog var2 1; tuyasend1 1,1; ENDON'],
+                        ['Rule3', 'ON TuyaReceived#Data=55AA03070005050100010015 DO power1 0 ENDON ON TuyaReceived#Data=55AA03070005050100010116 DO power1 1 ENDON ON TuyaReceived#Data=55AA03070005010100010011 DO backlog rule2 0; power2 0; rule2 1; power3 %var2%; var2 1; ENDON ON TuyaReceived#Data=55AA03070005010100010112 DO backlog rule2 0; power2 1; rule2 1; var2 0; power3 0; ENDON ON Scheme#Data=0 DO TuyaSend4 6,0 ENDON ON Scheme#Data>0 DO TuyaSend4 6,1 ENDON'],
+                        ['Rule1', '1'],
+                        ['Rule2', '1'],
+                        ['Rule3', '1']],
+        deviceLink: 'https://templates.blakadder.com/maxcio_400ml_diffuser.html'],
+
+
 
         // https://tasmota.github.io/docs/#/devices/Sonoff-RF-Bridge-433pi 
         [typeId: 'sonoff-rf-bridge-parent' , 
@@ -759,7 +790,7 @@ def refreshAdditional(metaConfig) {
     metaConfig = setStateVariablesToHide(['mac'], metaConfig=metaConfig)
     logging("hideExtended=$hideExtended, hideAdvanced=$hideAdvanced", 1)
     if(hideExtended == null || hideExtended == true) {
-        metaConfig = setPreferencesToHide(['hideAdvanced', 'ipAddress', 'override', 'useIPAsID', 'telePeriod', 'invertPowerNumber'], metaConfig=metaConfig)
+        metaConfig = setPreferencesToHide(['hideAdvanced', 'ipAddress', 'override', 'useIPAsID', 'telePeriod', 'invertPowerNumber', 'useAlternateColorCommand'], metaConfig=metaConfig)
     }
     if(hideExtended == null || hideExtended == true || hideAdvanced == null || hideAdvanced == true) {
         //  'deviceTemplateInput',
@@ -1599,7 +1630,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0410Tb"
+    String version = "v1.0.0411Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -3974,6 +4005,7 @@ void setEffectWidth(BigDecimal pixels) {
 }
 
 String getCommandStringWithModeReset(String command, String value) {
+    if(useAlternateColorCommand == true && command == "Color1") command = "Var1"
     return getMultiCommandString([[command: "Scheme", value: "0"], [command: "Fade", value: "0"], 
                                   [command: command, value: value]])
 }

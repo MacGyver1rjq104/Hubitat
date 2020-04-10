@@ -30,6 +30,7 @@ metadata {
 
         #!include:getDefaultMetadataPreferencesForTasmota(True) # False = No TelePeriod setting
         input(name: "invertPowerNumber", type: "bool", title: addTitleDiv("Send POWER1 events to POWER2, and vice versa"), description: addDescriptionDiv("Use this if you have a dimmer AND a switch in the same device and on/off is not sent/received correctly. Normally this is NOT needed."), defaultValue: false, displayDuringSetup: false, required: false)
+        input(name: "useAlternateColorCommand", type: "bool", title: addTitleDiv("Use Alternate Color command in Tasmota"), description: addDescriptionDiv("When enabled, this will use \"Var1\" instead of \"Color1\" in order to be able to catch the command in rules. Normally this is NOT needed."), defaultValue: false, displayDuringSetup: false, required: false)
         #!include:getDefaultMetadataPreferencesLast()
 	}
 
@@ -153,7 +154,7 @@ def refreshAdditional(metaConfig) {
     metaConfig = setStateVariablesToHide(['mac'], metaConfig=metaConfig)
     logging("hideExtended=$hideExtended, hideAdvanced=$hideAdvanced", 1)
     if(hideExtended == null || hideExtended == true) {
-        metaConfig = setPreferencesToHide(['hideAdvanced', 'ipAddress', 'override', 'useIPAsID', 'telePeriod', 'invertPowerNumber'], metaConfig=metaConfig)
+        metaConfig = setPreferencesToHide(['hideAdvanced', 'ipAddress', 'override', 'useIPAsID', 'telePeriod', 'invertPowerNumber', 'useAlternateColorCommand'], metaConfig=metaConfig)
     }
     if(hideExtended == null || hideExtended == true || hideAdvanced == null || hideAdvanced == true) {
         //  'deviceTemplateInput',

@@ -352,6 +352,12 @@ TreeMap getDeviceConfigurations() {
         installCommands: [],
         deviceLink: 'https://templates.blakadder.com/sonoff_4CH_Pro.html'],
 
+        [typeId: 'luminea-zx-2844-rgbw-led-controller',
+        name: 'Luminea ZX-2844 RGBW LED Controller ',
+        template: '{"NAME":"Luminea ZX-284","GPIO":[40,0,0,0,0,39,0,0,38,17,37,0,0],"FLAG":0,"BASE":18}',
+        installCommands: [],
+        deviceLink: 'https://templates.blakadder.com/luminea_zx-2844.html'],
+
         [typeId: 'tuyamcu-znsn-wifi-curtain-wall-panel',
         comment: 'NOT GENERIC - read the instructions',
         name: 'TuyaMCU ZNSN Wifi Curtain Wall Panel',
@@ -423,6 +429,30 @@ TreeMap getDeviceConfigurations() {
         deviceLink: ''],
 
         //https://templates.blakadder.com/oil_diffuser_550ml.html
+
+        
+        [typeId: 'maxcio-diffuser-v1',
+        name: 'Maxcio Diffuser Wood Grain (v1)',
+        template: '{"NAME":"MaxcioDiffuser","GPIO":[0,107,0,108,21,0,0,0,37,38,39,28,0],"FLAG":0,"BASE":54}',
+        // Possible alternative: {"NAME":"MJ-SD02","GPIO":[19,18,0,35,36,34,255,255,33,37,32,126,29],"FLAG":15,"BASE":18}
+        installCommands: [["WebLog", "2"], // A good idea for dimmers
+                        ['SerialLog', '0'],
+                        ['setoption20', '1'], // Update of Dimmer/Color/CT without turning power on
+                        ['TuyaMCU', '21,7'],
+                        ['DimmerRange', '1,255'],
+                        ['SetOption59', '0'],
+                        ['SwitchMode', '1'],
+                        ['SetOption66', '0'],   // Set publishing TuyaReceived to MQTT, 0 = disable, 1 = enable
+                        ['SetOption34', '50'],  // 0..255 = set Backlog inter-command delay in milliseconds (default = 200)
+                        ['Rule1', 'ON Var1#State DO backlog tuyasend3 8,%value%00ffff00; color %value%; rule2 0; power1 1; rule2 1; ENDON'],
+                        ['Rule2', 'ON Power1#State DO tuyasend1 5,%value% ENDON ON Power2#State=0 DO tuyasend1 1,0 ENDON ON Power2#State=1 DO backlog var2 1; tuyasend1 1,1; ENDON'],
+                        ['Rule3', 'ON TuyaReceived#Data=55AA03070005050100010015 DO power1 0 ENDON ON TuyaReceived#Data=55AA03070005050100010116 DO power1 1 ENDON ON TuyaReceived#Data=55AA03070005010100010011 DO backlog rule2 0; power2 0; rule2 1; power3 %var2%; var2 1; ENDON ON TuyaReceived#Data=55AA03070005010100010112 DO backlog rule2 0; power2 1; rule2 1; var2 0; power3 0; ENDON ON Scheme#Data=0 DO TuyaSend4 6,0 ENDON ON Scheme#Data>0 DO TuyaSend4 6,1 ENDON'],
+                        ['Rule1', '1'],
+                        ['Rule2', '1'],
+                        ['Rule3', '1']],
+        deviceLink: 'https://templates.blakadder.com/maxcio_400ml_diffuser.html'],
+
+
 
         // https://tasmota.github.io/docs/#/devices/Sonoff-RF-Bridge-433pi 
         [typeId: 'sonoff-rf-bridge-parent' , 
