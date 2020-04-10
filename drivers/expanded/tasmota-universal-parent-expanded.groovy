@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0408Tb
+ *  Code Version: v1.0.0410Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -300,6 +300,12 @@ TreeMap getDeviceConfigurations() {
          template: '{"NAME":"AWP04L","GPIO":[57,255,255,131,255,134,0,0,21,17,132,56,255],"FLAG":0,"BASE":18}',
          installCommands: [],
          deviceLink: 'https://templates.blakadder.com/awp04l.html'],
+
+        [typeId: 'dd001-mini-ir-v08-rgb-led-controller-no-ir',
+         name: 'DD001-MINI(G)-IR-V08 RGB LED Controller (no IR)',
+         template: '{"NAME":"DD001-NOIR-RGB","GPIO":[0,0,0,0,37,0,0,0,38,0,39,0,0],"FLAG":0,"BASE":18}',
+         installCommands: [["WebLog", "2"]],
+         deviceLink: 'https://templates.blakadder.com/DD001-MINIG-IR-V08.html'],
 
         [typeId: 'sonoff-4ch-pro',
          name: 'Sonoff 4CH Pro',
@@ -1593,7 +1599,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.0408Tb"
+    String version = "v1.0.0410Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

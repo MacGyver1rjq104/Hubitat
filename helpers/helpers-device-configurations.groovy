@@ -172,6 +172,12 @@ TreeMap getDeviceConfigurations() {
          installCommands: [],
          deviceLink: 'https://templates.blakadder.com/awp04l.html'],
 
+        [typeId: 'dd001-mini-ir-v08-rgb-led-controller-no-ir',
+         name: 'DD001-MINI(G)-IR-V08 RGB LED Controller (no IR)',
+         template: '{"NAME":"DD001-NOIR-RGB","GPIO":[0,0,0,0,37,0,0,0,38,0,39,0,0],"FLAG":0,"BASE":18}',
+         installCommands: [["WebLog", "2"]],
+         deviceLink: 'https://templates.blakadder.com/DD001-MINIG-IR-V08.html'],
+
         [typeId: 'sonoff-4ch-pro',
          name: 'Sonoff 4CH Pro',
          template: '{"NAME":"Sonoff 4CH Pro","GPIO":[17,255,255,255,23,22,18,19,21,56,20,24,0],"FLAG":0,"BASE":23}',
