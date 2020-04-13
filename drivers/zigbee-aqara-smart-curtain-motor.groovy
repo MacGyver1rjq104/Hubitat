@@ -291,7 +291,7 @@ def setPosition(position) {
     } else if (position < currentLevel) {
         sendEvent(name: "windowShade", value: "closing")
     }
-    if(onlySetPosition == false && position == 100) {
+    if((onlySetPosition == false || onlySetPosition == null) && position == 100) {
         if(mode == true){
             logging("Command: Close", 1)
         } else {
@@ -301,7 +301,7 @@ def setPosition(position) {
         cmd = zigbee.command(CLUSTER_ON_OFF, COMMAND_CLOSE)
         logging("cmd=${cmd}", 1)
         return cmd
-    } else if (onlySetPosition == false && position < 1) {
+    } else if ((onlySetPosition == false || onlySetPosition == null) && position < 1) {
         if(mode == true){
             logging("Command: Open", 1)
         } else {
