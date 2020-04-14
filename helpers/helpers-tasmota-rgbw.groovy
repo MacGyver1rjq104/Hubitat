@@ -67,7 +67,12 @@ void setHSB(h, s, b, callWhite) {
         //getAction(getCommandString("hsbcolor", hsbcmd))
     } else {
         //if(device.currentValue("colorMode") != "RGB" ) sendEvent(name: "colorMode", value: "RGB")
-        getAction(getCommandStringWithModeReset("HsbColor", hsbcmd))
+        if(useAlternateColorCommand == true) {
+            def rgbval = hubitat.helper.ColorUtils.hsvToRGB([h, s, b])
+            setRGB(rgbval[0], rgbval[1], rgbval[2])
+        } else {
+            getAction(getCommandStringWithModeReset("HsbColor", hsbcmd))
+        }
     }
 }
 
@@ -89,7 +94,8 @@ void setRGB(r, g, b) {
     if(adjusted) {
         logging("ADJUSTED setRGB('${r}','${g}','${b}')", 1)
     }
-    String rgbcmd = "${r},${g},${b}"
+    //String rgbcmd = "${r},${g},${b}"
+    String rgbcmd = hubitat.helper.ColorUtils.rgbToHEX([r, g, b])
     logging("rgbcmd = ${rgbcmd}", 1)
     state.red = r
     state.green = g
@@ -313,9 +319,13 @@ void setEffectWidth(BigDecimal pixels) {
 }
 
 String getCommandStringWithModeReset(String command, String value) {
-    if(useAlternateColorCommand == true && command == "Color1") command = "Var1"
-    return getMultiCommandString([[command: "Scheme", value: "0"], [command: "Fade", value: "0"], 
+    if(useAlternateColorCommand == true && command == "Color1") {
+        if(value.startsWith("#") == true) value = value.substring(1)
+        return getCommandString("Var1", "$value")
+    } else {
+        return getMultiCommandString([[command: "Scheme", value: "0"], [command: "Fade", value: "0"], 
                                   [command: command, value: value]])
+    }
 }
 
 /**

@@ -215,6 +215,12 @@ getAction(getCommandString("FriendlyName1", device.displayName.take(32))) // Set
 // We need the Backlog inter-command delay to be 20ms instead of 200...
 getAction(getCommandString("SetOption34", "20"))
 
+// Set the timezone
+int tzoffset = getLocation().timeZone.getOffset(now()) / 3600000
+String tzoffsetWithSign = tzoffset < 0 ? "${tzoffset}" : "+${tzoffset}"
+logging("Setting timezone to $tzoffsetWithSign", 10)
+getAction(getCommandString("Timezone", tzoffsetWithSign))
+
 // Just make sure we update the child devices
 logging("Scheduling refreshChildren...", 1)
 runIn(30, "refreshChildren")
