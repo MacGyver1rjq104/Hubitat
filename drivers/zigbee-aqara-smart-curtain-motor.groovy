@@ -28,6 +28,11 @@ metadata {
         command "altOpen"
         command "clearPosition"
         command "reverseCurtain"
+        command "clearPosition2"
+        command "reverseCurtain2"
+        
+        command "enableAutoClose"
+        command "disableAutoClose"
 
         // Fingerprint for Aqara Smart Curtain Motor (ZNCLDJ11LM)
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "0202", inClusters: "0000, 0003, 0102, 000D, 0013, 0001", outClusters: "0003, 000A", manufacturer: "LUMI", model: "lumi.curtain.hagl04", deviceJoinName: "Xiaomi Curtain B1"
@@ -78,6 +83,13 @@ def refresh() {
     cmds += zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
     cmds += zigbee.readAttribute(CLUSTER_POWER, POWER_ATTR_BATTERY_PERCENTAGE_REMAINING)
     cmds += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
+    // 0x115F
+    cmds += zigbee.readAttribute(CLUSTER_BASIC, 0x0401, [mfgCode: "0x115F"])
+    cmds += zigbee.readAttribute(CLUSTER_BASIC, 0xFF27, [mfgCode: "0x115F"])
+    cmds += zigbee.readAttribute(CLUSTER_BASIC, 0xFF28, [mfgCode: "0x115F"])
+    cmds += zigbee.readAttribute(CLUSTER_BASIC, 0xFF29, [mfgCode: "0x115F"])
+    //  read attr - raw: 0759010000180104420700000100000000, dni: 0759, endpoint: 01, cluster: 0000, size: 18, 
+    // attrId: 0401, encoding: 42, command: 01, value: 0700 000100000000
     return cmds
 }
 
@@ -91,33 +103,34 @@ def reboot() {
 // 0104 000A 01 01 0040 00 0547 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:0547, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
 // Fully open: 
 def parse(description) {
+    log.debug "in parse"
     #!include:getGenericZigbeeParseHeader()
     
     if (msgMap["profileId"] == "0104") {
-        logging("Unhandled KNOWN 0104 event - description:${description} | parseMap:${msgMap}", 1)
-        logging("RAW: ${msgMap["attrId"]}", 1)
+        logging("Unhandled KNOWN 0104 event - description:${description} | parseMap:${msgMap}", 10)
+        logging("RAW: ${msgMap["attrId"]}", 10)
         // catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, parseMap:[raw:catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:63A1, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0404") {
-        logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 1)
+        logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 10)
         //read attr - raw: 63A10100000804042000, dni: 63A1, endpoint: 01, cluster: 0000, size: 08, attrId: 0404, encoding: 20, command: 0A, value: 00, parseMap:[raw:63A10100000804042000, dni:63A1, endpoint:01, cluster:0000, size:08, attrId:0404, encoding:20, command:0A, value:00, clusterInt:0, attrInt:1028]
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0005") {
-        logging("Unhandled KNOWN event (pressed button) - description:${description} | parseMap:${msgMap}", 1)
+        logging("Unhandled KNOWN event (pressed button) - description:${description} | parseMap:${msgMap}", 10)
         // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E, parseMap:[raw:63A1010000200500420C6C756D692E6375727461696E, dni:63A1, endpoint:01, cluster:0000, size:20, attrId:0005, encoding:42, command:0A, value:lumi.curtain, clusterInt:0, attrInt:5]
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0007") {
-        logging("Unhandled KNOWN event (BASIC_ATTR_POWER_SOURCE) - description:${description} | parseMap:${msgMap}", 1)
+        logging("Unhandled KNOWN event (BASIC_ATTR_POWER_SOURCE) - description:${description} | parseMap:${msgMap}", 10)
         // Answer to zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
         //read attr - raw: 63A10100000A07003001, dni: 63A1, endpoint: 01, cluster: 0000, size: 0A, attrId: 0007, encoding: 30, command: 01, value: 01, parseMap:[raw:63A10100000A07003001, dni:63A1, endpoint:01, cluster:0000, size:0A, attrId:0007, encoding:30, command:01, value:01, clusterInt:0, attrInt:7]
     } else if (msgMap["cluster"] == "0102" && msgMap["attrId"] == "0008") {
-        logging("Position event (after pressing stop) - description:${description} | parseMap:${msgMap}", 1)
+        logging("Position event (after pressing stop) - description:${description} | parseMap:${msgMap}", 10)
         long theValue = Long.parseLong(msgMap["value"], 16)
         curtainPosition = theValue.intValue()
-        logging("GETTING POSITION from cluster 0102: int => ${curtainPosition}", 1)
+        logging("GETTING POSITION from cluster 0102: int => ${curtainPosition}", 10)
         positionEvent(curtainPosition)
         //read attr - raw: 63A1010102080800204E, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 4E
         //read attr - raw: 63A1010102080800203B, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 3B | parseMap:[raw:63A1010102080800203B, dni:63A1, endpoint:01, cluster:0102, size:08, attrId:0008, encoding:20, command:0A, value:3B, clusterInt:258, attrInt:8]
     } else if (msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
         // This is probably the battery event, like in other Xiaomi devices... it can also be FF02
-        logging("KNOWN event (probably battery) - description:${description} | parseMap:${msgMap}", 1)
+        logging("KNOWN event (probably battery) - description:${description} | parseMap:${msgMap}", 10)
         // TODO: Test this, I don't have the battery version...
         // 1C (file separator??) is missing in the beginning of the value after doing this encoding...
         if(getDeviceDataByName('model') != "lumi.curtain") {
@@ -129,7 +142,7 @@ def parse(description) {
 		if (msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
 			long theValue = Long.parseLong(msgMap["value"], 16)
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
-			logging("GETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 1)
+			logging("GETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 10)
 			curtainPosition = floatValue.intValue()
 			positionEvent(curtainPosition)
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
@@ -140,12 +153,12 @@ def parse(description) {
         if(getDeviceDataByName('model') != "lumi.curtain") {
             def bat = msgMap["value"]
             long value = Long.parseLong(bat, 16)/2
-            logging("Battery: ${value}%, ${bat}", 1)
+            logging("Battery: ${value}%, ${bat}", 10)
             sendEvent(name:"battery", value: value)
         }
 
 	} else if (msgMap["clusterId"] == "000A") {
-		logging("Xiaomi Curtain Present Event", 1)
+		logging("Xiaomi Curtain Present Event", 10)
 	} else {
 		log.warn "Unhandled Event - description:${description} | parseMap:${msgMap}"
 	}
@@ -235,8 +248,33 @@ def altOpen() {
 def reverseCurtain() {
     logging("reverseCurtain()", 1)
 	def cmd = []
-	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01)
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01, [mfgCode: "0x115F"])
+    cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0x0401, 0x21, 0x0100000000070007, [mfgCode: "0x115F"])
     logging("cmd=${cmd}", 1)
+    return cmd
+}
+
+def reverseCurtain2() {
+    logging("reverseCurtain2()", 1)
+	def cmd = []
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x00, [mfgCode: "0x115F"])
+    // xiaomi mfg: 0x115F
+    //cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0x0401, 0x21, 0x1100, [mfgCode: "0x115F"])
+    //cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0x0401, 0x21, 0x1100, [mfgCode: "0x115F"])
+    //cmd += zigbee.command(CLUSTER_BASIC, 0x0401, [mfgCode: "0x115F"], "0x0100000101070007")
+    //cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0x0401, 0x21, 0x0100000101070007, [mfgCode: "0x115F"])
+    // read attr - raw: 0759010000180104420700000100000000, dni: 0759, endpoint: 01, cluster: 0000, 
+    // size: 18, attrId: 0401, encoding: 42, command: 01, value: 0700000100000000
+    //                                                           0100000101070007
+    //                                                           0700000100000000
+    // [he wattr 0x0759 0x01 0x0000 0x0401 0x21 {0100000101070007} {115F}, delay 2000, 
+    //  he cmd 0x0759 0x01 0x0000 0x401 {0x0100000101070007} {115F}, delay 2000]
+    logging("cmd=${cmd}", 10)
+    //def hubAction = new hubitat.device.HubAction("he wattr 0x0759 0x01 0x0000 0x0401 0x42 {0x0100000101070007} {115F}", hubitat.device.Protocol.ZIGBEE)
+    //def hubAction = new hubitat.device.HubAction("he wattr 0x0759 0x01 0x0000 0x0401 0x42 {0100000101070007} {115F}", hubitat.device.Protocol.ZIGBEE)
+    //def hubAction = new hubitat.device.HubAction("he wattr 0x0759 0x01 0x0000 0x0401 0x21 {7777} {115F}", hubitat.device.Protocol.ZIGBEE)
+    //logging("hubAction=${hubAction}", 10)
+    //sendHubCommand(hubAction)
     return cmd
 }
 
@@ -276,7 +314,31 @@ def altStop() {
 def clearPosition() {
     logging("clearPosition()", 1)
     def cmd = []
-	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF27, 0x10, 0x00)
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF27, 0x10, 0x00, [mfgCode: "0x115F"])
+    logging("cmd=${cmd}", 1)
+    return cmd
+}
+
+def clearPosition2() {
+    logging("clearPosition2()", 1)
+    def cmd = []
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF27, 0x10, 0x01, [mfgCode: "0x115F"])
+    logging("cmd=${cmd}", 1)
+    return cmd
+}
+
+def enableAutoClose() {
+    logging("enableAutoClose()", 1)
+    def cmd = []
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x115F"])
+    logging("cmd=${cmd}", 1)
+    return cmd
+}
+
+def disableAutoClose() {
+    logging("disableAutoClose()", 1)
+    def cmd = []
+	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x00, [mfgCode: "0x115F"])
     logging("cmd=${cmd}", 1)
     return cmd
 }
