@@ -127,9 +127,19 @@ def parse(description) {
         logging("RAW: ${msgMap["attrId"]}", 0)
         // catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, parseMap:[raw:catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:63A1, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0404") {
-        // Received after sending open/close/setposition commands
-        logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 10)
-        //read attr - raw: 63A10100000804042000, dni: 63A1, endpoint: 01, cluster: 0000, size: 08, attrId: 0404, encoding: 20, command: 0A, value: 00, parseMap:[raw:63A10100000804042000, dni:63A1, endpoint:01, cluster:0000, size:08, attrId:0404, encoding:20, command:0A, value:00, clusterInt:0, attrInt:1028]
+        if(msgMap["command"] == "0A") {
+            if(msgMap["value"] == "00") {
+                //sendEvent(name:"commandValue", value: msgMap["value"])
+                // The position event that comes after this one is a real position
+                logging("Unhandled KNOWN 0A command event with Value 00 - description:${description} | parseMap:${msgMap}", 10)
+            } else {
+                logging("Unhandled KNOWN 0A command event - description:${description} | parseMap:${msgMap}", 10)
+            }
+        } else {
+            // Received after sending open/close/setposition commands
+            logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 10)
+            //read attr - raw: 63A10100000804042000, dni: 63A1, endpoint: 01, cluster: 0000, size: 08, attrId: 0404, encoding: 20, command: 0A, value: 00, parseMap:[raw:63A10100000804042000, dni:63A1, endpoint:01, cluster:0000, size:08, attrId:0404, encoding:20, command:0A, value:00, clusterInt:0, attrInt:1028]
+        }
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0005") {
         logging("Unhandled KNOWN event (pressed button) - description:${description} | parseMap:${msgMap}", 0)
         // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E, parseMap:[raw:63A1010000200500420C6C756D692E6375727461696E, dni:63A1, endpoint:01, cluster:0000, size:20, attrId:0005, encoding:42, command:0A, value:lumi.curtain, clusterInt:0, attrInt:5]
@@ -162,7 +172,11 @@ def parse(description) {
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
 			logging("GETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 10)
 			curtainPosition = floatValue.intValue()
-			positionEvent(curtainPosition)
+            // Only send position events when the curtain is done moving
+            //if(device.currentValue('commandValue') == "00") {
+            //    sendEvent(name:"commandValue", value: "-1")
+                positionEvent(curtainPosition)
+            //}
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
 			logging("done…", 1)
 			sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE))                
@@ -197,8 +211,12 @@ def positionEvent(curtainPosition) {
         logging("Closed", 1)
         windowShadeStatus = "closed"
     }
-	sendEvent(name:"windowShade", value: windowShadeStatus)
-	sendEvent(name:"position", value: curtainPosition)
+    logging("device.currentValue('position') = ${device.currentValue('position')}, curtainPosition = $curtainPosition", 1)
+    if(device.currentValue('position') != curtainPosition) {
+        logging("CHANGING device.currentValue('position') = ${device.currentValue('position')}, curtainPosition = $curtainPosition", 1)
+        sendEvent(name:"windowShade", value: windowShadeStatus)
+        sendEvent(name:"position", value: curtainPosition)
+    }
 	//sendEvent(name:"switch", value: (windowShadeStatus == "closed" ? "off" : "on"))
 }
 
@@ -531,10 +549,10 @@ ArrayList setPosition(position) {
     ArrayList cmd = []
     position = position as Integer
     logging("setPosition(position: ${position})", 1)
-    Integer  currentPosition = device.currentValue("position")
+    Integer currentPosition = device.currentValue("position")
     if (position > currentPosition) {
         sendEvent(name: "windowShade", value: "opening")
-    } else if (position < currentLevel) {
+    } else if (position < currentPosition) {
         sendEvent(name: "windowShade", value: "closing")
     }
     if(position == 100 && getDeviceDataByName('model') == "lumi.curtain") {
