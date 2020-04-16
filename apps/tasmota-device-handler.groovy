@@ -13,7 +13,8 @@ definition(
     //TODO: Replace these icons???
     iconUrl:   "",
     iconX2Url: "",
-    iconX3Url: ""
+    iconX3Url: "",
+    documentationLink: "https://github.com/markus-li/Hubitat/wiki"
 ) {
     appSetting "defaultTasmotaPassword"
 }
