@@ -197,10 +197,11 @@ def discoveredAddConfirm() {
         //app.updateSetting("deviceConfig", [type: "enum", value:"01generic-device"])
         
         resultPage("discoveredAddConfirm", "Discovered Tasmota-based Device", 
-                   "The device has been added. Press next to return to the Main Page.<br/>It may take up to a minute or so before all child devices have been created if many are needed. Be patient. If all child devices are not created as expected, press Configure and Refresh in the Universal Parent and wait again. Don't click multiple times, it takes time for the device to reconfigure itself.", 
-                   nextPage="mainPage")
+                   'The device has been added. To add another device click "Add Next Device". Click "Done" to return to the Main Page.<br/>It may take up to a minute or so before all child devices have been created if many are needed. Be patient. If all child devices are not created as expected, press Configure and Refresh in the Universal Parent and wait again. Don\'t click multiple times, it takes time for the device to reconfigure itself.', 
+                   nextPage="mainPage", otherReturnPage="deviceDiscovery", otherReturnPageTitle="Add Next Device")
     } else {
-        resultPage("discoveredAddConfirm", "Discovered Tasmota-based Device", "No device was selected. Press next to return to the Main page.", nextPage="mainPage")
+        resultPageFailed("discoveredAddConfirm", "Discovered Tasmota-based Device", "No device was selected. To add another device click \"Add Another Device\". Click \"Done\" to return to the Main page.", 
+                   nextPage="mainPage", otherReturnPage="deviceDiscovery", otherReturnPageTitle="Add Another Device")
     }
 }
 

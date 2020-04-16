@@ -66,8 +66,8 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 
 #!include:getDefaultAppMethods()
  
-void makeAppTitle() {
-    section(getElementStyle('title', getMaterialIcon('build', 'icon-large') + "${app.label} <span id='version'>${getAppVersion()}</span>" + getCSSStyles())){
+void makeAppTitle(btnDone=false) {
+    section(getElementStyle('title', getMaterialIcon('build', 'icon-large') + "${app.label} <span id='version'>${getAppVersion()}</span>" + getCSSStyles(btnDone))){
         }
 }
 
@@ -202,14 +202,36 @@ Map resultPage(){
     return resultPage("resultPage", "Result Page", "My little result...")
 }
 
-Map resultPage(name, title, result, nextPage = "mainPage"){
+Map resultPage(name, title, result, nextPage = "mainPage", otherReturnPage = null, otherReturnTitle="Return Page"){
     logging("resultPage(name = $name, title = $title, result = $result, nextPage = $nextPage)", 1)
 
     return dynamicPage(name: name, title: "", nextPage: nextPage) {
-        makeAppTitle() // Also contains the CSS
+        makeAppTitle(btnDone=true) // Also contains the CSS
 
         section(getElementStyle('header', getMaterialIcon('done') + "Action Completed"), hideable: true, hidden: false){
             paragraph("<div style=\"font-size: 16px;\">${result}</div>")
+        }
+        if(otherReturnPage != null) {
+            section(getElementStyle('header', getMaterialIcon('dns') + "Actions"), hideable: true, hidden: false){ 
+                href("$otherReturnPage", title:"$otherReturnTitle", description:"")
+            }
+        }
+    }
+}
+
+Map resultPageFailed(name, title, result, nextPage = "mainPage", otherReturnPage = null, otherReturnTitle="Return Page"){
+    logging("resultPage(name = $name, title = $title, result = $result, nextPage = $nextPage)", 1)
+
+    return dynamicPage(name: name, title: "", nextPage: nextPage) {
+        makeAppTitle(btnDone=true) // Also contains the CSS
+
+        section(getElementStyle('header', getMaterialIcon('warning') + "Action Failed!"), hideable: true, hidden: false){
+            paragraph("<div style=\"font-size: 16px;\">${result}</div>")
+        }
+        if(otherReturnPage != null) {
+            section(getElementStyle('header', getMaterialIcon('dns') + "Actions"), hideable: true, hidden: false){ 
+                href("$otherReturnPage", title:"$otherReturnTitle", description:"")
+            }
         }
     }
 }
@@ -445,12 +467,12 @@ def manuallyAddConfirm(){
         //app.updateSetting("deviceConfig", [type: "enum", value:"01generic-device"])
         
         resultPage("manuallyAddConfirm", "Manual Installation Summary", 
-                   "The device with IP \"$tmpIpAddress\" has been installed. It may take up to a minute or so before all child devices have been created if many are needed. Be patient. If all child devices are not created as expected, press Configure and Refresh in the Universal Parent and wait again. Don't click multiple times, it takes time for the device to reconfigure itself. Press \"Next\" to Continue.", 
+                   "The device with IP \"$tmpIpAddress\" has been installed. It may take up to a minute or so before all child devices have been created if many are needed. Be patient. If all child devices are not created as expected, press Configure and Refresh in the Universal Parent and wait again. Don't click multiple times, it takes time for the device to reconfigure itself. Click \"Done\" to Continue.", 
                    nextPage="mainPage")
     } else {
-        resultPage("manuallyAddConfirm", "Manual Installation Summary", 
-                   "The entered ip address ($ipAddress) is not valid. Please try again. Press \"Next\" to Continue.", 
-                   nextPage="mainPage")
+        resultPageFailed("manuallyAddConfirm", "Manual Installation Summary", 
+                   "The entered ip address ($ipAddress) is not valid. Please try again. To add another device click \"Add Another Device\". Click \"Done\" to Continue.", 
+                   nextPage="mainPage", otherReturnPage="manuallyAdd", otherReturnPageTitle="Add Another Device")
     }
 }
 
@@ -459,7 +481,7 @@ def deleteDevice(){
         unsubscribe()
         deleteChildDevice(state.currentDeviceId)
         resultPage("deleteDevice", "Deletion Summary", 
-                   "The device with DNI $state.currentDeviceId has been deleted. Press \"Next\" to Continue.", 
+                   "The device with DNI $state.currentDeviceId has been deleted. Click \"Done\" to Continue.", 
                    nextPage="mainPage")
 	} catch (e) {
         resultPage("deleteDevice", "Deletion Summary", 
@@ -473,7 +495,7 @@ def changeName(){
     thisDevice.label = settings["${state.currentDeviceId}_label"]
 
     resultPage("changeName", "Change Name Summary", 
-                   "The device has been renamed to \"$thisDevice.label\". Press \"Next\" to Continue.", 
+                   "The device has been renamed to \"$thisDevice.label\". Click \"Done\" to Continue.", 
                    nextPage="mainPage")
 }
 

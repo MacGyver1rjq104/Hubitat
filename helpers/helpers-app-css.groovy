@@ -4,8 +4,8 @@
  * Helper functions for App CSS
  */
 
-String getCSSStyles() {
-    return '''<style>
+String getCSSStyles(btnDone=false) {
+    String css = '''<style>
 /* General App Styles */
 #version {
     font-size: 50%;
@@ -162,8 +162,21 @@ div.mdl-button--raised h4.pre {
 @media (min-width: 840px)
 .mdl-cell--8-col, .mdl-cell--8-col-desktop.mdl-cell--8-col-desktop {
     width: calc(76.6666666667% - 16px);
+}'''
+if(btnDone == true) {
+    css += '''
+button#btnNext {
+    font-size: 0;
+    display: flex;
 }
-</style>'''
+button#btnNext::after {
+    content: "Done";
+    font-size: 14px;
+}'''
+}
+css += '</style>'
+
+return css
 }
 
  /**
