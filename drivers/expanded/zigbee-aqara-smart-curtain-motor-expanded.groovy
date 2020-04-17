@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v0.9.1
+ *  Code Version: v0.9.1.0418
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -222,14 +222,30 @@ def parse(description) {
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
 			logging("GETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 10)
 			curtainPosition = floatValue.intValue()
+            // Original 100%:
+            // msgMap: [raw:C49701000D1C5500390000C84200F02300000000, dni:C497, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:42C80000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00000000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
+            // Original 0%:
+            // msgMap: [raw:C49701000D1C5500390000000000F02300000000, dni:C497, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:00000000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00000000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
+
+            // B1 100%:
+            // msgMap: [raw:E85F01000D1C5500390000004000F02300000200, dni:E85F, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:40000000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00020000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
+            // B1 60% ????:
+            // msgMap: [raw:E85F01000D1C5500390000004000F02300000200, dni:E85F, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:40000000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00020000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
+            // B1 0%
+            // msgMap: [raw:E85F01000D1C5500390000000000F02300000200, dni:E85F, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:00000000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00020000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
             // Only send position events when the curtain is done moving
             //if(device.currentValue('commandValue') == "00") {
             //    sendEvent(name:"commandValue", value: "-1")
-                positionEvent(curtainPosition)
+                
             //}
+            if(getDeviceDataByName('model') == "lumi.curtain") {
+                positionEvent(curtainPosition)
+            } else {
+                sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008))
+            }
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
 			logging("done…", 1)
-			sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE))                
+			sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE))
 		}
 	} else if (msgMap["clusterId"] == "0001" && msgMap["attrId"] == "0021") {
         if(getDeviceDataByName('model') != "lumi.curtain") {
@@ -635,18 +651,18 @@ ArrayList setPosition(position) {
     -----------------------------------------------------------------------------
 */
 
-// BEGIN:getDefaultFunctions(driverVersionSpecial="v0.9.1")
+// BEGIN:getDefaultFunctions(driverVersionSpecial="v0.9.1.MMDD")
 /* Default Driver Methods go here */
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v0.9.1"
+    String version = "v0.9.1.0418"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
     return version
 }
-// END:  getDefaultFunctions(driverVersionSpecial="v0.9.1")
+// END:  getDefaultFunctions(driverVersionSpecial="v0.9.1.MMDD")
 
 
 // BEGIN:getLoggingFunction()
