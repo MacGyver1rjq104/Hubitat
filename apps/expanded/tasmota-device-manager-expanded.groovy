@@ -1,9 +1,9 @@
-// IMPORT URL: https://raw.githubusercontent.com/markus-li/Hubitat/development/apps/expanded/tasmota-device-handler-expanded.groovy
+// IMPORT URL: https://raw.githubusercontent.com/markus-li/Hubitat/development/apps/expanded/tasmota-device-manager-expanded.groovy
 
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v1.0.0416Tb
+ *  Code Version: v1.0.0417Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.security.MessageDigest
 
 
 definition(
-    name: "Tasmota Device Handler",
+    name: "Tasmota Device Manager",
     namespace: "tasmota",
     author: "Markus Liljergren (markus-li)",
     description: "Device Manager for Tasmota",
@@ -44,7 +44,7 @@ definition(
 }
 
 preferences {
-     page(name: "mainPage", title: "Tasmota Device Handler", install: true, uninstall: true)
+     page(name: "mainPage", title: "Tasmota Device Manager", install: true, uninstall: true)
      page(name: "deleteDevice")
      page(name: "refreshDevices")
      page(name: "resultPage")
@@ -645,7 +645,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.0416Tb"
+    String version = "v1.0.0417Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
@@ -990,7 +990,7 @@ def configureTasmotaDevice(params) {
 def deviceDiscoveryTEMP() {
    dynamicPage(name: "deviceDiscoveryTEMP", title: "Discover Tasmota-based Devices", nextPage: "mainPage") {
 		section {
-			paragraph "NOT FUNCTIONAL: This process will automatically discover your device, this may take a few minutes. Please be patient. Tasmota Device Handler then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your WiFi network."
+			paragraph "NOT FUNCTIONAL: This process will automatically discover your device, this may take a few minutes. Please be patient. Tasmota Device Manager then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your WiFi network."
             /*input "deviceType", "enum", title:"Device Type", description: "", required: true, options: 
                 // BEGIN:makeTasmotaConnectDriverListV1()
                 ["Tasmota - Universal Parent",
@@ -1006,7 +1006,7 @@ def manuallyAdd() {
     dynamicPage(name: "manuallyAdd", title: "", nextPage: "manuallyAddConfirm", previousPage: "mainPage") {
         makeAppTitle() // Also contains the CSS
 		section(getElementStyle('header', getMaterialIcon('', 'he-add_1') + "Manually Install a Tasmota-based Device"), hideable: true, hidden: false) {
-            paragraph("This process will install a Tasmota-based Device with the entered IP address. Tasmota Device Handler then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your wifi network.")
+            paragraph("This process will install a Tasmota-based Device with the entered IP address. Tasmota Device Manager then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your wifi network.")
             
             input("deviceType", "enum", title:"Device Type", description: "", required: true, submitOnChange: false, options: 
                 // BEGIN:makeTasmotaConnectDriverListV1()
@@ -1891,7 +1891,7 @@ def deviceDiscovery(params=[:]) {
             
             paragraph("Please note that Hue Bridge Emulation (Configuration->Configure Other->Emulation) must be turned on in Tasmota for discovery to work (this is the default with the Hubitat version of Tasmota).")
 
-            paragraph("Installed devices are not displayed (if Tasmota Device Handler has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Handler before may take time to discover.")
+            paragraph("Installed devices are not displayed (if Tasmota Device Manager has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Manager before may take time to discover.")
             getAvailableDevicesList()
             paragraph("Once the device you want to install is available in the above list, click \"Next\" to go to the Installation Page.")
             paragraph("If the device you expect to find is not found within 10 minutes, use the Manual Install method instead.")
@@ -1967,7 +1967,7 @@ def deviceDiscoveryPage2() {
     return dynamicPage(name:"deviceDiscoveryPage2", title:"", nextPage:"discoveredAddConfirm") {
         makeAppTitle() // Also contains the CSS
 		section(getElementStyle('header', getMaterialIcon('', 'he-discovery_1') + "Discover a Tasmota Device"), hideable: true, hidden: false) {
-            paragraph("Installed devices are not displayed (if Tasmota Device Handler has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Handler before may take time to discover.")
+            paragraph("Installed devices are not displayed (if Tasmota Device Manager has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Manager before may take time to discover.")
             input("deviceType", "enum", title:"Device Type", description: "", required: true, submitOnChange: true, options: 
                 // BEGIN:makeTasmotaConnectDriverListV1()
                 ["Tasmota - Universal Parent",

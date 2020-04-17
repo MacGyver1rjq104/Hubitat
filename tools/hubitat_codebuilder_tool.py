@@ -83,6 +83,20 @@ except SyntaxError as e:
     update_2nd_hub_drivers = False
 
 
+def getExpandedDriverList(driver_selection, all_drivers):
+    driver_files_new = []
+    if(driver_selection != None and driver_selection != []):
+        for d in driver_selection:
+            if(d['id'] != 0 and ('file' in d) == False):
+                for d_info in all_drivers:
+                    if (d['id'] == d_info['id']):
+                        d=d_info
+                        break
+            if('file' in d):
+                driver_files_new.append(d)
+    return driver_files_new
+
+
 # NOTE: All function names use mixedCaps since this is used with Groovy and it makes
 #       it less confusing not changing style all the time. 
 def main():
@@ -358,7 +372,7 @@ def main():
         #{'id': 867}, {'id': 868},  # Universal Drivers TESTING
         {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
         
-    #    {'id': 801}, {'id': 579},  # Zigbee drivers
+        {'id': 801}, #{'id': 579},  # Zigbee drivers
     #     {'id':587},  # Wifi Curtain Wall Panel
     #    {'id':590},
     #    {'id':651},    # Sensor - Distance
@@ -384,17 +398,7 @@ def main():
     # 
     #expected_num_drivers = 1
 
-    if(driver_files_testing != None and driver_files_testing != []):
-        driver_files_new = []
-        for d in driver_files_testing:
-            if(d['id'] != 0 and ('file' in d) == False):
-                for d_info in driver_files:
-                    if (d['id'] == d_info['id']):
-                        d=d_info
-                        break
-            if('file' in d):
-                driver_files_new.append(d)
-        driver_files = driver_files_new
+    driver_files_testing = getExpandedDriverList(driver_files_testing, driver_files)
     #print(driver_files)
 
     # Setting id to 0 will have the Code Builder submit the driver as a new one, don't forget to note the ID 
@@ -410,7 +414,7 @@ def main():
     generic_drivers = []
     specific_drivers = []
     
-    used_driver_list = cb.expandGroovyFilesAndPush(driver_files, code_type='driver')
+    used_driver_list = cb.expandGroovyFilesAndPush(driver_files_testing, code_type='driver')
     for d in used_driver_list:
         if(used_driver_list[d]['name'].startswith('Tasmota - ')):
             # Get all Info
@@ -545,7 +549,7 @@ def main():
         #{'id': 97, 'file': 'tasmota-connect.groovy' },
         # 163 is available for re-use
         #{'id': 163, 'file': 'tasmota-connect-test.groovy' },
-        {'id': 289, 'file': 'tasmota-device-handler.groovy' },
+        {'id': 289, 'file': 'tasmota-device-manager.groovy' },
     ]
 
     cb.setUsedDriverList(used_driver_list)

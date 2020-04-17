@@ -5,7 +5,7 @@
 #!include:getDefaultParentImports()
 
 definition(
-    name: "Tasmota Device Handler",
+    name: "Tasmota Device Manager",
     namespace: "tasmota",
     author: "Markus Liljergren (markus-li)",
     description: "Device Manager for Tasmota",
@@ -20,7 +20,7 @@ definition(
 }
 
 preferences {
-     page(name: "mainPage", title: "Tasmota Device Handler", install: true, uninstall: true)
+     page(name: "mainPage", title: "Tasmota Device Manager", install: true, uninstall: true)
      page(name: "deleteDevice")
      page(name: "refreshDevices")
      page(name: "resultPage")
@@ -405,7 +405,7 @@ def configureTasmotaDevice(params) {
 def deviceDiscoveryTEMP() {
    dynamicPage(name: "deviceDiscoveryTEMP", title: "Discover Tasmota-based Devices", nextPage: "mainPage") {
 		section {
-			paragraph "NOT FUNCTIONAL: This process will automatically discover your device, this may take a few minutes. Please be patient. Tasmota Device Handler then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your WiFi network."
+			paragraph "NOT FUNCTIONAL: This process will automatically discover your device, this may take a few minutes. Please be patient. Tasmota Device Manager then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your WiFi network."
             /*input "deviceType", "enum", title:"Device Type", description: "", required: true, options: 
                 #!include:makeTasmotaConnectDriverListV1()
             input "ipAddress", "text", title:"IP Address", description: "", required: true */
@@ -418,7 +418,7 @@ def manuallyAdd() {
     dynamicPage(name: "manuallyAdd", title: "", nextPage: "manuallyAddConfirm", previousPage: "mainPage") {
         makeAppTitle() // Also contains the CSS
 		section(getElementStyle('header', getMaterialIcon('', 'he-add_1') + "Manually Install a Tasmota-based Device"), hideable: true, hidden: false) {
-            paragraph("This process will install a Tasmota-based Device with the entered IP address. Tasmota Device Handler then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your wifi network.")
+            paragraph("This process will install a Tasmota-based Device with the entered IP address. Tasmota Device Manager then communicates with the device to obtain additional information from it. Make sure the device is on and connected to your wifi network.")
             
             input("deviceType", "enum", title:"Device Type", description: "", required: true, submitOnChange: false, options: 
                 #!include:makeTasmotaConnectDriverListV1()

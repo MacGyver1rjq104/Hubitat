@@ -68,7 +68,7 @@ def deviceDiscovery(params=[:]) {
             
             paragraph("Please note that Hue Bridge Emulation (Configuration->Configure Other->Emulation) must be turned on in Tasmota for discovery to work (this is the default with the Hubitat version of Tasmota).")
 
-            paragraph("Installed devices are not displayed (if Tasmota Device Handler has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Handler before may take time to discover.")
+            paragraph("Installed devices are not displayed (if Tasmota Device Manager has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Manager before may take time to discover.")
             getAvailableDevicesList()
             paragraph("Once the device you want to install is available in the above list, click \"Next\" to go to the Installation Page.")
             paragraph("If the device you expect to find is not found within 10 minutes, use the Manual Install method instead.")
@@ -144,7 +144,7 @@ def deviceDiscoveryPage2() {
     return dynamicPage(name:"deviceDiscoveryPage2", title:"", nextPage:"discoveredAddConfirm") {
         makeAppTitle() // Also contains the CSS
 		section(getElementStyle('header', getMaterialIcon('', 'he-discovery_1') + "Discover a Tasmota Device"), hideable: true, hidden: false) {
-            paragraph("Installed devices are not displayed (if Tasmota Device Handler has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Handler before may take time to discover.")
+            paragraph("Installed devices are not displayed (if Tasmota Device Manager has access to them). Previously discovered devices will show quickly, devices never seen by Tasmota Device Manager before may take time to discover.")
             input("deviceType", "enum", title:"Device Type", description: "", required: true, submitOnChange: true, options: 
                 #!include:makeTasmotaConnectDriverListV1()
             )
