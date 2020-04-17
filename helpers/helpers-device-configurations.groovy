@@ -283,6 +283,12 @@ TreeMap getDeviceConfigurations() {
         installCommands: [["SetOption81", "1"]],
         deviceLink: 'https://templates.blakadder.com/brilliantsmart_20676.html'],
 
+        [typeId: 'brilliantsmart-20741-bulb' ,
+        name: 'BrilliantSmart 20741 9W 750lm RGBW Bulb',
+        template: '{"NAME":"BS-20741-RGBW","GPIO":[0,0,0,0,37,40,0,0,38,0,39,0,0],"FLAG":0,"BASE":18}',
+        installCommands: [],
+        deviceLink: 'https://templates.blakadder.com/brilliantsmart_20741.html'],
+
         [typeId: 'brilliant-bl20925-pm-plug', 
         name: 'Brilliant Lighting BL20925 PM Plug',
         template: '{"NAME":"BL20925","GPIO":[0,0,0,17,133,132,0,0,131,158,21,0,0],"FLAG":0,"BASE":52}',
