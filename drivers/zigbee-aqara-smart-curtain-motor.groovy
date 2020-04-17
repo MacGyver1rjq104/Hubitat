@@ -191,6 +191,7 @@ def parse(description) {
             if(getDeviceDataByName('model') == "lumi.curtain") {
                 positionEvent(curtainPosition)
             } else {
+                sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055))
                 sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008))
             }
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
