@@ -307,7 +307,7 @@ TreeMap getDeviceConfigurations() {
         installCommands: [],
         deviceLink: ''],
 
-        [typeId: 'ykyc-wj1y0-10a', 
+        [typeId: 'merkury-mi-bw210-999w', 
         name: 'Merkury MI-BW210-999W',
         template: '{"NAME":"MI-BW210-999W","GPIO":[0,0,0,0,140,37,0,0,142,38,141,0,0],"FLAG":0,"BASE":48}',
         installCommands: [],

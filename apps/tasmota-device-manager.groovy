@@ -40,7 +40,14 @@ preferences {
 
 // https://docs.smartthings.com/en/latest/smartapp-developers-guide/preferences-and-settings.html#preferences-and-settings
 
+// This App is ONLY used for installation and management tasks, it DOES NOT RUN in the background when not used by the user.
+// The code in this App has not been optimized for performance and is in many ways very "unclean".
+// One day I might take the time to clean it up and optimize it, but it works as intended already and since it
+// doesn't affect resource use it really isn't that important.
+
 #!include:getHelperFunctions('device-configurations')
+
+
 
 Long getMillisSinceDate(myDate) {
     

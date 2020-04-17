@@ -64,6 +64,11 @@ preferences {
 
 // https://docs.smartthings.com/en/latest/smartapp-developers-guide/preferences-and-settings.html#preferences-and-settings
 
+// This App is ONLY used for installation and management tasks, it DOES NOT RUN in the background when not used by the user.
+// The code in this App has not been optimized for performance and is in many ways very "unclean".
+// One day I might take the time to clean it up and optimize it, but it works as intended already and since it
+// doesn't affect resource use it really isn't that important.
+
 /**
  * DEVICE CONFIGURATIONS METHODS (helpers-device-configurations)
  *
@@ -373,7 +378,7 @@ TreeMap getDeviceConfigurations() {
         installCommands: [],
         deviceLink: ''],
 
-        [typeId: 'ykyc-wj1y0-10a', 
+        [typeId: 'merkury-mi-bw210-999w', 
         name: 'Merkury MI-BW210-999W',
         template: '{"NAME":"MI-BW210-999W","GPIO":[0,0,0,0,140,37,0,0,142,38,141,0,0],"FLAG":0,"BASE":48}',
         installCommands: [],
@@ -618,6 +623,8 @@ def getDeviceConfigurationsAsListOption() {
 /**
  * --END-- DEVICE CONFIGURATIONS METHODS (helpers-device-configurations)
  */
+
+
 
 Long getMillisSinceDate(myDate) {
     
