@@ -163,7 +163,7 @@ def parse(description) {
     // parse() Generic Zigbee-device header BEGINS here
     logging("PARSE START---------------------", 1)
     logging("Parsing: ${description}", 0)
-    def events = []
+    def cmds = []
     def msgMap = zigbee.parseDescriptionAsMap(description)
     logging("msgMap: ${msgMap}", 1)
     // parse() Generic header ENDS here
@@ -240,13 +240,17 @@ def parse(description) {
             //}
             if(getDeviceDataByName('model') == "lumi.curtain") {
                 positionEvent(curtainPosition)
+                sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
             } else {
-                sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055))
-                sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008))
+                hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
+                //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
+                //allActions.add(new hubitat.device.HubAction("delay 1000"))
+                allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0], hubitat.device.Protocol.ZIGBEE))
+                sendHubCommand(allActions)
             }
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
 			logging("done…", 1)
-			sendHubCommand(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE))
+			cmds += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
 		}
 	} else if (msgMap["clusterId"] == "0001" && msgMap["attrId"] == "0021") {
         if(getDeviceDataByName('model') != "lumi.curtain") {
@@ -263,7 +267,7 @@ def parse(description) {
     // BEGIN:getGenericZigbeeParseFooter()
     // parse() Generic Zigbee-device footer BEGINS here
     
-    return events
+    return cmds
     // parse() Generic footer ENDS here
     // END:  getGenericZigbeeParseFooter()
 }
