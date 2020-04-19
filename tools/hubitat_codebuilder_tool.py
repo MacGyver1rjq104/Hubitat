@@ -35,7 +35,7 @@ sys.path.insert(0, "private/tools")
 from hubitat_hubspider import HubitatHubSpider
 from hubitat_codebuilder import HubitatCodeBuilder, HubitatCodeBuilderLogFormatter
 from hubitat_codebuilder_tasmota import HubitatCodeBuilderTasmota
-
+from hubitat_packagemanagertool import HubitatPackageManagerTool, HubitatPackageManagerPackage
 
 
 # Internal functions
@@ -112,6 +112,13 @@ def main():
     hhs = HubitatHubSpider(None, 'hubitat_hubspider.cfg')
     # Check the result from login()
     log.debug(hhs.login())
+
+    # Setup the Package Manager objects
+    pm = HubitatPackageManagerTool("Markus Liljergren", "2.1.7", 
+        gitHubUrl="https://github.com/markus-li/Hubitat")
+
+    t4he_pkg = HubitatPackageManagerPackage("Tasmota for Hubitat Elevation", 
+        documentationLink="https://github.com/markus-li/Hubitat/wiki", communityLink=None)
 
     # By including our namespace, anything we import in this file is available
     # to call by the include tags in the .groovy files when we process them
@@ -274,7 +281,8 @@ def main():
         {'id': 737, 'file': 'tasmota-generic-wifi-dimmer.groovy' },
 
         # Universal drivers
-        {'id': 865, 'file': 'tasmota-universal-parent.groovy', 'specialDebugLabel': 'descriptionText' },
+        {'id': 865, 'file': 'tasmota-universal-parent.groovy', 'specialDebugLabel': 'descriptionText',
+         'required': True },
         
         {'id': 866, 'file': 'tasmota-universal-multi-sensor-child.groovy', 
             'specialDebugLabel': 'descriptionText' },
@@ -412,6 +420,8 @@ def main():
 
     #cb.clearChecksums()
 
+    
+
     generic_drivers = []
     specific_drivers = []
 
@@ -421,23 +431,35 @@ def main():
     used_driver_list = cb.expandGroovyFilesAndPush(driver_files_testing, code_type='driver')
     #print(used_driver_list)
     #print(driver_files_testing)
-    for d in used_driver_list:
-        if(used_driver_list[d]['name'].startswith('Tasmota - ')):
+    sorted_driver_list = []
+    for d in sorted(used_driver_list.values(), key=lambda k: k['name']):
+        if(d['name'] != "Tasmota - Universal Parent"):
+            sorted_driver_list.append(d)
+        else:
+            sorted_driver_list.insert(0, d)
+    for d in sorted_driver_list:
+        if(d['name'].startswith('Tasmota - ')):
             # Get all Info
-            newD = used_driver_list[d].copy()
+            newD = d.copy()
+
             # Add the rest of what we know about this ID:
             for d_info in driver_files_testing:
-                if (used_driver_list[d]['id'] == d_info['id']):
+                if (d['id'] == d_info['id']):
                     #log.debug('d_info: {}'.format(d_info))
                     newD.update(d_info)
                     break
             # Modify it a little bit
-            newD.update({'name': used_driver_list[d]['name'][10:], 
-                        'file': used_driver_list[d]['file'].stem + used_driver_list[d]['file'].suffix,
-                        'filestem': used_driver_list[d]['file'].stem})
+            newD.update({'name': d['name'][10:], 
+                        'file': d['file'].stem + d['file'].suffix,
+                        'filestem': d['file'].stem})
             newD['filestem'] = newD['filestem'].replace('-expanded', '')
             newD['wikiname'] = newD['name'].replace(' ', '-').replace('/', '-')
             #log.debug('d_info 2: {}'.format(d_info))
+
+            # Add this driver to the Package
+            t4he_pkg.addDriver(d['name'], newD['version'], newD['namespace'], 
+                base_raw_repo_url + newD['file'], newD['required'], newD['id'], id=None)
+
             # We will modify these later, make sure we have COPIES
             if(newD['name'].startswith('Generic')):
                 generic_drivers.append(newD.copy())
@@ -519,7 +541,7 @@ def main():
                  "* [%(name)s](%(base_url)s%(file)s) %(version)s\n"]}]
         cb.makeDriverListDoc(my_driver_list_2, output_file='DRIVERLIST.md', filter_function=cb.makeDriverListFilter, 
             base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
-        print(parent_drivers)
+        #print(parent_drivers)
         my_driver_list_table = [
             {'name': '', 
              'format': 'These are the currently available drivers (updated: %(asctime)s):\n\n'},
@@ -545,7 +567,7 @@ def main():
             base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
         for d in parent_drivers + child_drivers:
             output_file = "../Hubitat.wiki/Driver-List/[Driver-List]-Tasmota-" + d['wikiname'] + '.md'
-            print(output_file)
+            #print(output_file)
             if(not path.exists(output_file)):
                 with open (output_file, "w") as wd:
                     wd.write('**Tasmota ' + d['name'] + '**')
@@ -599,24 +621,33 @@ def main():
         #{'id': 97, 'file': 'tasmota-connect.groovy' },
         # 163 is available for re-use
         #{'id': 163, 'file': 'tasmota-connect-test.groovy' },
-        {'id': 289, 'file': 'tasmota-device-manager.groovy' },
+        {'id': 289, 'file': 'tasmota-device-manager.groovy', 'required': True, 'oauth': False },
     ]
 
     cb.setUsedDriverList(used_driver_list)
     filtered_app_files = []
     for a in app_files:
-        if(a['id'] != 97):
-            filtered_app_files.append(a)
-        if(a['id'] != 0 and len(used_driver_list) >= expected_num_drivers):
-            filtered_app_files.append(a)
-            log.info('Found ' + str(len(used_driver_list)) + ' driver(s)...')
-            log.debug("Just found App ID " + str(id))
-        else:
-            if(a['id'] == 0):
-                log.info("Not making App updates since this app has no ID set yet! Skipped updating App with path: '" + str(a['file']) + "'")
-            else:
-                log.info("Not ready for App updates! Only " + str(len(used_driver_list)) + " driver(s) currently active! Skipped updating App ID " + str(a['id']))
+        # Add this driver to the Package
+        filtered_app_files.append(a)
+        #if(a['id'] != 97):
+        #    filtered_app_files.append(a)
+        #if(a['id'] != 0 and len(used_driver_list) >= expected_num_drivers):
+        #    filtered_app_files.append(a)
+        #    log.info('Found ' + str(len(used_driver_list)) + ' driver(s)...')
+        #    log.debug("Just found App ID " + str(id))
+        #else:
+        #    if(a['id'] == 0):
+        #        log.info("Not making App updates since this app has no ID set yet! Skipped updating App with path: '" + str(a['file']) + "'")
+        #    else:
+        #        log.info("Not ready for App updates! Only " + str(len(used_driver_list)) + " driver(s) currently active! Skipped updating App ID " + str(a['id']))
+    #print(filtered_app_files)
     used_app_list = cb.expandGroovyFilesAndPush(filtered_app_files, code_type='app')
+
+    #print(used_app_list)
+    for a in sorted(used_app_list.values(), key=lambda k: k['name']):
+        a['file'] = a['file'].stem + a['file'].suffix
+        t4he_pkg.addApp(a['name'], a['version'], a['namespace'], 
+                app_raw_repo_url + a['file'], a['required'], a['oauth'], a['id'], id=None)
 
     #cb.expandGroovyFile('tasmota-sonoff-powr2.groovy', expanded_dir)
     #hhs.push_driver_code(513, cb.getOutputGroovyFile('tasmota-sonoff-powr2.groovy', expanded_dir))
@@ -633,6 +664,17 @@ def main():
 
     log.info('Current Default Version Number: {}'.format(getDriverVersion(driverVersionSpecial=cb.default_version)))
     
+    #t4he_pkg.clearDrivers()
+    pm.addPackage(t4he_pkg, "Integrations", 
+        "https://raw.githubusercontent.com/markus-li/Hubitat/development/packageManifest.json",
+        "Allows you to integrate Tasmota-based devices with Hubitat Elevation.")
+    
+    pm.buildRepository()
+    #pm.printJSON()
+
+    t4he_pkg.buildManifest()
+    #t4he_pkg.printJSON()
+
     contents=errors.getvalue()
     if(len(contents) > 0):
         print('ERRORS and/or WARNINGS occured during this run:')
@@ -640,6 +682,8 @@ def main():
     else:
         log.info('No ERRORS or WARNINGS occured during this run :)')
     errors.close()
+
+    cb.hubitat_hubspider.get_app_list()
 
     cb.saveChecksums()
     hhs.save_session()

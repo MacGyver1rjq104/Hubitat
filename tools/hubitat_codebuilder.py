@@ -120,6 +120,7 @@ class HubitatCodeBuilder:
         self.log = logging.getLogger(__name__)
         self.hubitat_hubspider = hubitat_hubspider
         self.he_drivers_dict = self.hubitat_hubspider.get_driver_list()
+        self.he_apps_dict = self.hubitat_hubspider.get_app_list()
         #self.log.debug('he_drivers_dict: {}'.format(str(self.he_drivers_dict)))
         self.driver_checksums = {}
         self.app_checksums = {}
@@ -346,6 +347,9 @@ class HubitatCodeBuilder:
         self._alternate_module = alternate_module
         self._current_version = self.getFormattedVersionString((config_dict['version'] if 'version' in config_dict else self.default_version))
         r['version'] = self._current_version
+        r['required'] = (config_dict['required'] if 'required' in config_dict else False)
+        if(code_type == 'app'):
+            r['oauth'] = (config_dict['oauth'] if 'oauth' in config_dict else False)
         self.log.debug("Expanding using version: {}".format(self._current_version))
         self._config_dict = config_dict
         
@@ -425,7 +429,7 @@ class HubitatCodeBuilder:
 
     def expandGroovyFilesAndPush(self, code_files, code_type = 'driver'):
         j=0
-        used_driver_list = {}
+        used_code_list = {}
         self.log.info("Starting expandGroovyFilesAndPush(code_type={})".format(code_type))
         for d in code_files:
             aof = None
@@ -507,9 +511,15 @@ class HubitatCodeBuilder:
                     #self.log.debug(str(self.he_drivers_dict))
                     self.he_drivers_dict[id].update(expanded_result)
                     if(id in self.he_drivers_dict):
-                        used_driver_list[id] = self.he_drivers_dict[id]
+                        used_code_list[id] = self.he_drivers_dict[id]
                     #log.debug("code_files 2: {}".format(str(code_files[id])))
                     self.log.debug("Just worked on Driver ID " + str(id))
+                elif(code_type == 'app'):
+                    id = int(d['id'])
+                    self.he_apps_dict[id].update(expanded_result)
+                    if(id in self.he_apps_dict):
+                        used_code_list[id] = self.he_apps_dict[id]
+                    self.log.debug("Just worked on App ID " + str(id))
             else:
                 self.log.debug("We don't have an ID for '{}' yet, so let us make one...".format(expanded_result['name']))
                 new_id = self.hubitat_hubspider.push_new_code(code_type, output_groovy_file)
@@ -524,8 +534,8 @@ class HubitatCodeBuilder:
                     self.log.error("FAILED to add '{}'! Something unknown went wrong...".format(expanded_result['name']))
 
         self.log.info('Had '+str(j)+' {} files to work on...'.format(code_type))
-        #self.setUsedDriverList(used_driver_list)
-        return(used_driver_list)
+        #self.setUsedDriverList(used_code_list)
+        return(used_code_list)
     
     def makeDriverListDoc(self, driver_list, output_file='DRIVERLIST', base_data={}, 
                         filter_function=(lambda dict_to_check, section: True)):

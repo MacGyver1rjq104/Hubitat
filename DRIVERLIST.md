@@ -1,5 +1,5 @@
 # Driver List 
-These are the currently available drivers (updated: 2020-04-19):
+These are the currently available drivers (updated: 2020-04-20):
 
 **Parent Device Drivers**
 * [Universal Parent](https://github.com/markus-li/Hubitat/blob/development/drivers/expanded/tasmota-universal-parent-expanded.groovy) v1.0.1.0419Tb

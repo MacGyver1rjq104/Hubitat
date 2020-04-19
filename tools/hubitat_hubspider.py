@@ -20,6 +20,9 @@ import json
 import pickle
 import logging
 from urllib.parse import urlparse
+from lxml import html
+from lxml import etree
+from dateutil import parser
 
 """
   Hubitat Hub Spider class
@@ -206,6 +209,36 @@ class HubitatHubSpider:
     else:
       self.log.error("Unknown problem occured in get_driver_list(): " + str(response))
       return -1
+
+  def get_app_list(self):
+    self._prepare_session()
+    APIUrl = self.API_base_url + '/app/list'
+    tzinfos = {"CST": -3600}
+    response = self.session.get(APIUrl)
+    tree = html.fromstring(response.text)
+    approw = tree.xpath('//tr[@class="app-row"]')
+    ndict = {}
+    for a in approw:
+      #print('1--------------------')
+      #print(etree.tostring(a))
+      #print('2--------------------')
+      ntree = html.fromstring(etree.tostring(a))
+      id = int(ntree.attrib['data-app-id'])
+      ndict[id] = {'id': id}
+      ndict[id]['name'] = ntree.xpath('//a[@title]')[0].attrib['title']
+      ndict[id]['namespace'] = ntree.xpath('//td')[1].text.strip()
+      ndict[id]['oauthEnabled'] = ntree.xpath('//td/div')[1].text.strip() == 'enabled'
+      ndict[id]['lastModified'] = parser.parse(ntree.xpath('//td')[3].text.strip(), tzinfos=tzinfos)
+      #print(id)
+      #print(ndict[id]['name'])
+      #print(ndict[id]['namespace'])
+      #print(ndict[id]['oauth'])
+      #print(ndict[id]['lastModified'])
+      #print('3--------------------')
+    return ndict
+    #s = cleaner.clean_html(response.text)
+
+    
 
   # http://192.168.10.1/device/drivers
   def push_new_app(self, codeID, groovyFileToPublish):
