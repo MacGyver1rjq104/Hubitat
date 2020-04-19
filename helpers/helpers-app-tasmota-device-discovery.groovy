@@ -166,11 +166,12 @@ def deviceDiscoveryPage2() {
 def discoveredAddConfirm() {
     def devices = getDevices()
     def selectedDevice = devices.find { it.value.mac == selectedDiscoveredDevice }
-    selectedDevice.value["installed"] = true
     def ipAddress = convertHexToIP(selectedDevice?.value?.networkAddress)
     //log.debug("Discovered IP: $ipAddress")
     if ( ipAddress != null && ipAddress =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
         logging("Creating Tasmota-based Wifi Device with dni: ${convertIPtoHex(ipAddress)}", 1)
+        selectedDevice.value["installed"] = true
+
         if(passwordDevice == null || passwordDevice == "") {
            passwordDevice = "[installed]"
         }
