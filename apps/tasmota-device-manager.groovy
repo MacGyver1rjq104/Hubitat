@@ -47,8 +47,6 @@ preferences {
 
 #!include:getHelperFunctions('device-configurations')
 
-
-
 Long getMillisSinceDate(myDate) {
     
     //myDate
@@ -332,7 +330,7 @@ String getDeviceTable(deviceInfo, String extra="") {
     content += '<th style="width: 80px;"><div>Heartbeat</div></th>'
     content += '<th style="width: 33px;"><div>Wifi</div></th>'
     content += '<th style="width: 100px;"><div>Firmware</div></th>'
-    content += '<th style="width: 80px;"><div>Driver</div></th>'
+    content += '<th style="width: 100px;"><div>Driver</div></th>'
     content += '<th style="width: 60px;"><div>Status</div></th>'
     content += '<th style=""><div>Type</div></th>'
     content += '</tr><tr>'
