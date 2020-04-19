@@ -1,4 +1,4 @@
-#!include:getHeaderLicense(driverVersionSpecial="v0.9.1.MMDD")
+#!include:getHeaderLicense()
 
 /* Inspired by a driver from shin4299 which can be found here:
    https://github.com/shin4299/XiaomiSJ/blob/master/devicetypes/shinjjang/xiaomi-curtain-b1.src/xiaomi-curtain-b1.groovy
@@ -190,7 +190,7 @@ def parse(description) {
             //}
             if(getDeviceDataByName('model') == "lumi.curtain") {
                 positionEvent(curtainPosition)
-                sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
+                //sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
             } else {
                 hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
                 //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))

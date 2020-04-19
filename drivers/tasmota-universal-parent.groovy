@@ -49,7 +49,7 @@ def installedAdditional() {
     // This runs from installed()
 	logging("installedAdditional()", 50)
 
-    // Do NOT call updatedAdditional() form here!
+    // Do NOT call updatedAdditional() from here!
 
     //createChildDevices()
 }

@@ -17,8 +17,8 @@
 def getGenericZigbeeParseHeader():
     return """// parse() Generic Zigbee-device header BEGINS here
 logging("PARSE START---------------------", 1)
-logging("Parsing: ${description}", 0)
-def events = []
+logging("Parsing: ${description}", 1)
+def cmds = []
 def msgMap = zigbee.parseDescriptionAsMap(description)
 logging("msgMap: ${msgMap}", 1)
 // parse() Generic header ENDS here"""
@@ -26,5 +26,5 @@ logging("msgMap: ${msgMap}", 1)
 def getGenericZigbeeParseFooter():
     return """// parse() Generic Zigbee-device footer BEGINS here
 
-return events
+return cmds
 // parse() Generic footer ENDS here"""

@@ -98,7 +98,7 @@ class HubitatCodeBuilderTasmota(HubitatCodeBuilder):
             self.log.debug("Executing getDefaultMetadataPreferencesForParentDevices(numSwitches={})...".format(self._config_dict['numSwitches']))
             output = self.calling_namespace.getDefaultMetadataPreferencesForParentDevices(self._config_dict['numSwitches'])
             return(True, output)
-        elif(('comment' in self._config_dict or 'deviceLink' in self._config_dict) and eval_cmd.startswith('getDefaultFunctions(')):
+        elif(eval_cmd.startswith('getDefaultFunctions(')):
             comment = ''
             separator = ''
             if('comment' in self._config_dict):
@@ -106,8 +106,12 @@ class HubitatCodeBuilderTasmota(HubitatCodeBuilder):
                 separator = ' - '
             if('deviceLink' in self._config_dict):
                 comment = '{}{}<a target=\\"blakadder\\" href=\\"{}\\">Device Model Info</a>'.format(comment, separator, self._config_dict['deviceLink'])
-            self.log.debug("Executing getDefaultFunctions(comment={})...".format(comment))
-            output = self.calling_namespace.getDefaultFunctions(comment=comment)
+            self.log.debug("Executing getDefaultFunctions(comment={}, driverVersionSpecial={})...".format(comment, self._current_version))
+            output = self.calling_namespace.getDefaultFunctions(comment=comment, driverVersionSpecial=self._current_version)
+            return(True, output)
+        elif(eval_cmd.startswith('getHeaderLicense(')):
+            self.log.debug("Executing getHeaderLicense(driverVersionSpecial={})...".format(self._current_version))
+            output = self.calling_namespace.getHeaderLicense(driverVersionSpecial=self._current_version)
             return(True, output)
         #getSpecialDebugEntry
         elif(('specialDebugLabel' in self._config_dict) and eval_cmd.startswith('getSpecialDebugEntry(')):

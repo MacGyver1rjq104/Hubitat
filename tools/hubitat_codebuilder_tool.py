@@ -23,6 +23,7 @@ from pathlib import Path
 import logging
 import io
 from colorama import init, Fore, Style
+from os import path
 import sys
 init()
 sys.path.insert(0, "private/tools")
@@ -115,7 +116,7 @@ def main():
     # By including our namespace, anything we import in this file is available
     # to call by the include tags in the .groovy files when we process them
     cb = HubitatCodeBuilderTasmota(hhs, calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
-                app_raw_repo_url=app_raw_repo_url)
+                app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
     #cb = HubitatCodeBuilderTasmota()
     
     driver_files = [
@@ -315,10 +316,10 @@ def main():
 
         # Zigbee
         {'id': 579, 'file': 'zigbee-generic-wifi-switch-plug.groovy' },
-        {'id': 801, 'file': 'zigbee-aqara-smart-curtain-motor.groovy' },
+        {'id': 801, 'file': 'zigbee-aqara-smart-curtain-motor.groovy', 'version': 'v0.9.1.MMDDb' },
 
         # Virtual
-        {'id': 962, 'file': 'javascript-injection-driver.groovy' },
+        {'id': 962, 'file': 'javascript-injection-driver.groovy', 'version': 'v0.1.0.MMDDb' },
 
         # The following can be overwritten: 
     ]
@@ -354,7 +355,7 @@ def main():
     # As long as we have an id, we can just supply that here instead of the whole config...
     # 651 left over from RF Link Child
     driver_files_testing = [
-        {'id': 866},
+        #{'id': 866},
         {'id': 359}, # Switch as Contact Sensor Child
         {'id': 361}, # Switch as Motion Sensor Child
         {'id': 555}, # Switch as Water Sensor Child
@@ -371,8 +372,8 @@ def main():
         {'id': 962}, # Javascript Injection Driver
         #{'id': 867}, {'id': 868},  # Universal Drivers TESTING
         {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
-        
-        {'id': 801}, #{'id': 579},  # Zigbee drivers
+        #{'id': 865}
+        #{'id': 801}, #{'id': 579},  # Zigbee drivers
     #     {'id':587},  # Wifi Curtain Wall Panel
     #    {'id':590},
     #    {'id':651},    # Sensor - Distance
@@ -396,7 +397,7 @@ def main():
     ]
     # 222, 145, 144, 163, 161
     # 
-    #expected_num_drivers = 1
+    expected_num_drivers = 1
 
     driver_files_testing = getExpandedDriverList(driver_files_testing, driver_files)
     #print(driver_files)
@@ -413,28 +414,39 @@ def main():
 
     generic_drivers = []
     specific_drivers = []
+
+    parent_drivers = []
+    child_drivers = []
     
     used_driver_list = cb.expandGroovyFilesAndPush(driver_files_testing, code_type='driver')
+    #print(used_driver_list)
+    #print(driver_files_testing)
     for d in used_driver_list:
         if(used_driver_list[d]['name'].startswith('Tasmota - ')):
             # Get all Info
             newD = used_driver_list[d].copy()
             # Add the rest of what we know about this ID:
-            for d_info in driver_files:
+            for d_info in driver_files_testing:
                 if (used_driver_list[d]['id'] == d_info['id']):
                     #log.debug('d_info: {}'.format(d_info))
                     newD.update(d_info)
                     break
             # Modify it a little bit
-            newD.update({'name': used_driver_list[d]['name'][10:], 'file': used_driver_list[d]['file'].stem + used_driver_list[d]['file'].suffix})
+            newD.update({'name': used_driver_list[d]['name'][10:], 
+                        'file': used_driver_list[d]['file'].stem + used_driver_list[d]['file'].suffix,
+                        'filestem': used_driver_list[d]['file'].stem})
+            newD['filestem'] = newD['filestem'].replace('-expanded', '')
+            newD['wikiname'] = newD['name'].replace(' ', '-').replace('/', '-')
             #log.debug('d_info 2: {}'.format(d_info))
             # We will modify these later, make sure we have COPIES
             if(newD['name'].startswith('Generic')):
                 generic_drivers.append(newD.copy())
             else:
                 specific_drivers.append(newD.copy())
-    
-
+            if(newD['name'].find("Parent") != -1):
+                parent_drivers.append(newD.copy())
+            else:
+                child_drivers.append(newD.copy())
   
     # Make Driver Lists if we have all files we expect...
     if(len(used_driver_list) >= expected_num_drivers):
@@ -454,12 +466,12 @@ def main():
              'items': specific_drivers,
              # Make sure the format requesting the most amount of data is first in the list
              'items_format': [
-                 "* [%(name)s](%(base_url)s%(file)s) (%(comment)s) - Import URL: [RAW](%(base_raw_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n",
-                 "* [%(name)s](%(base_url)s%(file)s) - Import URL: [RAW](%(base_raw_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n",
-                 "* [%(name)s](%(base_url)s%(file)s) (%(comment)s) - Import URL: [RAW](%(base_raw_url)s%(file)s)\n",
-                 "* [%(name)s](%(base_url)s%(file)s) - Import URL: [RAW](%(base_raw_url)s%(file)s)\n"]}]
-        cb.makeDriverListDoc(my_driver_list_1, output_file='DRIVERLIST_OLD', filter_function=cb.makeDriverListFilter,
-            base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s (%(comment)s) - Import URL: [RAW](%(base_raw_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n",
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s - Import URL: [RAW](%(base_raw_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n",
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s (%(comment)s) - Import URL: [RAW](%(base_raw_url)s%(file)s)\n",
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s - Import URL: [RAW](%(base_raw_url)s%(file)s)\n"]}]
+        #cb.makeDriverListDoc(my_driver_list_1, output_file='DRIVERLIST_OLD', filter_function=cb.makeDriverListFilter,
+        #    base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
         full_header = '<tr><td><b>Device</b></td><td><b>Comment</b></td><td><b>Import&nbsp;URL</b></td><td><b>Model&nbsp;Info</b></td></tr>'
         my_driver_list_1b = [
             {'name': '', 
@@ -483,30 +495,68 @@ def main():
                  "<tr><td><a href=\"%(base_url)s%(file)s\">%(name)s</td><td>%(comment)s</td><td><a href=\"%(base_raw_url)s%(file)s\">RAW</a></td><td></td></tr>\n",
                  "<tr><td><a href=\"%(base_url)s%(file)s\">%(name)s</td><td></td><td><a href=\"%(base_raw_url)s%(file)s\">RAW</a></td><td></td></tr>\n"]},
             {'name': '</table>\n', 'format': '%(name)s'},]
-        cb.makeDriverListDoc(my_driver_list_1b, filter_function=cb.makeDriverListFilter,
-            base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
+        #cb.makeDriverListDoc(my_driver_list_1b, filter_function=cb.makeDriverListFilter,
+        #    base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
         my_driver_list_2 = [
             {'name': 'Driver List', 'format': '# %(name)s \n'},
             {'name': '', 
              'format': 'These are the currently available drivers (updated: %(asctime)s):\n\n'},
-            {'name': 'Tasmota - Generic Drivers',
+            {'name': 'Parent Device Drivers',
              'format': '**%(name)s**\n',
-             'items': generic_drivers,
+             'items': parent_drivers,
              'items_format': [
-                 "* [%(name)s](%(base_url)s%(file)s) (%(comment)s)\n",
-                 "* [%(name)s](%(base_url)s%(file)s)\n",]},
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s (%(comment)s)\n",
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s\n",]},
             {'name': '\n', 'format': '%(name)s'},
-            {'name': 'Tasmota - Specific Device Drivers',
+            {'name': 'Child Device Drivers',
              'format': '**%(name)s**\n',
-             'items': specific_drivers,
+             'items': child_drivers,
              # Make sure the format requesting the most amount of data is first in the list
              'items_format': [
-                 "* [%(name)s](%(base_url)s%(file)s) (%(comment)s) - [Device Model Info](%(deviceLink)s)\n", 
-                 "* [%(name)s](%(base_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n", 
-                 "* [%(name)s](%(base_url)s%(file)s) (%(comment)s)\n", 
-                 "* [%(name)s](%(base_url)s%(file)s)\n"]}]
+                 #"* [%(name)s](%(base_url)s%(file)s) (%(comment)s) - [Device Model Info](%(deviceLink)s)\n", 
+                 #"* [%(name)s](%(base_url)s%(file)s) - [Device Model Info](%(deviceLink)s)\n", 
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s (%(comment)s)\n", 
+                 "* [%(name)s](%(base_url)s%(file)s) %(version)s\n"]}]
         cb.makeDriverListDoc(my_driver_list_2, output_file='DRIVERLIST.md', filter_function=cb.makeDriverListFilter, 
             base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
+        print(parent_drivers)
+        my_driver_list_table = [
+            {'name': '', 
+             'format': 'These are the currently available drivers (updated: %(asctime)s):\n\n'},
+            {'name': 'Tasmota Parent Device Drivers',
+             'format': '**%(name)s**\n\n' + \
+                       '| Name | URL | RAW URL | Version | Comment |\n' + \
+                       '| --- | --- | --- | --- | --- |\n',
+             'items': parent_drivers,
+             'items_format': [
+                 "| [%(name)s](https://github.com/markus-li/Hubitat/wiki/[Driver-List]-Tasmota-%(wikiname)s) | [URL](%(base_url)s%(file)s) | [RAW](%(base_raw_url)s%(file)s) | %(version)s | %(comment)s |\n",
+                 "| [%(name)s](https://github.com/markus-li/Hubitat/wiki/[Driver-List]-Tasmota-%(wikiname)s) | [URL](%(base_url)s%(file)s) | [RAW](%(base_raw_url)s%(file)s) | %(version)s | |\n",]},
+            {'name': '\n', 'format': '%(name)s'},
+            {'name': 'Tasmota Child Device Drivers',
+             'format': '**%(name)s**\n\n' + \
+                       '| Name | URL | RAW URL | Version | Comment |\n' + \
+                       '| --- | --- | --- | --- | --- |\n',
+             'items': child_drivers,
+             # Make sure the format requesting the most amount of data is first in the list
+             'items_format': [
+                 "| [%(name)s](https://github.com/markus-li/Hubitat/wiki/[Driver-List]-Tasmota-%(wikiname)s) | [URL](%(base_url)s%(file)s) | [RAW](%(base_raw_url)s%(file)s) | %(version)s | | %(comment)s |\n",
+                 "| [%(name)s](https://github.com/markus-li/Hubitat/wiki/[Driver-List]-Tasmota-%(wikiname)s) | [URL](%(base_url)s%(file)s) | [RAW](%(base_raw_url)s%(file)s) | %(version)s | | |\n",]}]
+        cb.makeDriverListDoc(my_driver_list_table, output_file='../Hubitat.wiki/Driver-List/Driver-List.md', filter_function=cb.makeDriverListFilter, 
+            base_data={'base_url': base_repo_url, 'base_raw_url': base_raw_repo_url})
+        for d in parent_drivers + child_drivers:
+            output_file = "../Hubitat.wiki/Driver-List/[Driver-List]-Tasmota-" + d['wikiname'] + '.md'
+            print(output_file)
+            if(not path.exists(output_file)):
+                with open (output_file, "w") as wd:
+                    wd.write('**Tasmota ' + d['name'] + '**')
+                    wd.write('''
+                    
+***Commands***
+
+***Capabilities***
+
+***Comments***
+''')
         if(update_2nd_hub_drivers):
             # Get the 2nd hub driver list id-assignments
             id_map = {}
@@ -534,7 +584,7 @@ def main():
                 'items_format': [
                     "  {'id': %(id_2nd)d, 'original_id': %(id)d, 'name': '%(name)s'},\n",]},
                 {'name': ']', 'format': '%(name)s'},]
-            cb.makeDriverListDoc(my_driver_list_3, output_file='tools/config/driver_list_2nd_hub.py')
+            cb.makeDriverListDoc(my_driver_list_3, output_file='private/tools/config/driver_list_2nd_hub.py')
         else:
             log.warn("Can't update the 2nd hub drivers! Check other errors/warnings for details...")
     else:
@@ -581,7 +631,7 @@ def main():
     else:
         log.info('No new apps where created!')
 
-    log.info('Current version: {}'.format(getDriverVersion()))
+    log.info('Current Default Version Number: {}'.format(getDriverVersion(driverVersionSpecial=cb.default_version)))
     
     contents=errors.getvalue()
     if(len(contents) > 0):

@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v0.9.1.0418
+ *  Code Version: v0.9.1.0419b
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ def parse(description) {
     // BEGIN:getGenericZigbeeParseHeader()
     // parse() Generic Zigbee-device header BEGINS here
     logging("PARSE START---------------------", 1)
-    logging("Parsing: ${description}", 0)
+    logging("Parsing: ${description}", 1)
     def cmds = []
     def msgMap = zigbee.parseDescriptionAsMap(description)
     logging("msgMap: ${msgMap}", 1)
@@ -240,7 +240,7 @@ def parse(description) {
             //}
             if(getDeviceDataByName('model') == "lumi.curtain") {
                 positionEvent(curtainPosition)
-                sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
+                //sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
             } else {
                 hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
                 //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
@@ -661,7 +661,7 @@ ArrayList setPosition(position) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v0.9.1.0418"
+    String version = "v0.9.1.0419b"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

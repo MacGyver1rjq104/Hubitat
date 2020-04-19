@@ -23,6 +23,7 @@ import io
 import inspect
 import pickle
 import hashlib
+from datetime import date
 from colorama import init, Fore, Style
 
 # Local imports
@@ -49,7 +50,7 @@ class HubitatCodeBuilderLogFormatter(logging.Formatter):
     def __init__(self, fmt_default="%(time_elapsed)-11s:%(name)-20s:%(levelname)5s: %(msg)s", 
                     fmt_debug="%(time_elapsed)-11s:%(name)-20s:%(levelname)5s:%(lineno)4d:%(funcName)s: %(msg)s", 
                     fmt_error="%(time_elapsed)-11s:%(name)-20s:%(levelname)5s:%(lineno)4d:%(funcName)s: %(msg)s", 
-                    error_beep=True, default_color=Fore.GREEN, debug_color=Fore.YELLOW, error_color=Fore.RED,):
+                    error_beep=True, default_color=Fore.GREEN, debug_color=Fore.YELLOW, error_color=Fore.RED):
         init() # This is the init for Colorama
         # Another format to use: '%(asctime)s:%(name)20s:%(levelname)5s: %(message)s'
         self._error_beep = error_beep
@@ -59,6 +60,7 @@ class HubitatCodeBuilderLogFormatter(logging.Formatter):
         self._default_color = default_color
         self._debug_color = debug_color
         self._error_color = error_color
+        
         super().__init__(fmt=fmt_default)
 
     def format(self, record):
@@ -106,12 +108,14 @@ class HubitatCodeBuilderError(Exception):
 class HubitatCodeBuilder:
 
     def __init__(self, hubitat_hubspider, calling_namespace=None, app_dir=Path('./apps'), app_build_dir=Path('./apps/expanded'), \
-                 driver_dir=Path('./drivers'), driver_build_dir=Path('./drivers/expanded'), \
+                 driver_dir=Path('./drivers'), driver_build_dir=Path('./drivers/expanded'), default_version='v0.0.1.MMDDb', \
                  build_suffix='-expanded', driver_raw_repo_url=None, app_raw_repo_url=None):
         self.app_dir = Path(app_dir)
         self.app_build_dir = Path(app_build_dir)
         self.driver_dir = Path(driver_dir)
         self.driver_build_dir = Path(driver_build_dir)
+        self.default_version = self.getFormattedVersionString(default_version)
+        self._current_version = None   # This is used to store the version currently worked on
         self.build_suffix = build_suffix
         self.log = logging.getLogger(__name__)
         self.hubitat_hubspider = hubitat_hubspider
@@ -265,14 +269,15 @@ class HubitatCodeBuilder:
             #print(str(e))
             found = False
         # This if can be overriden in self._runEvalCmdAdditional()
-        if(found == False and eval_cmd == 'getDeviceInfoFunction()'):
-            self.log.debug("Executing getDeviceInfoFunction()...")
-            if(self._definition_string == None):
-                raise HubitatCodeBuilderError('ERROR: Missing/incorrect Definition in file!')
-            # self._definition_string contains a function that can be 
-            # inserted into a driver to retrieve driver info from.
-            output = self._definition_string
-            found = True
+        if(found == False):
+            if(eval_cmd == 'getDeviceInfoFunction()'):
+                self.log.debug("Executing getDeviceInfoFunction()...")
+                if(self._definition_string == None):
+                    raise HubitatCodeBuilderError('ERROR: Missing/incorrect Definition in file!')
+                # self._definition_string contains a function that can be 
+                # inserted into a driver to retrieve driver info from.
+                output = self._definition_string
+                found = True
         # If no special handling is needed, just run eval...
         # 1. Try if it runs without prepending anything...
         # 2. See if it works with a method in the class instance
@@ -280,7 +285,7 @@ class HubitatCodeBuilder:
         # 4. If all fails, throw an exception!
         if(found == False):
             try:
-                self.log.debug("eval_cmd: " + eval_cmd)
+                #self.log.debug("eval_cmd: " + eval_cmd)
                 output = eval(eval_cmd)
             except NameError:
                 try:
@@ -310,6 +315,11 @@ class HubitatCodeBuilder:
         
         return(m.hexdigest())
 
+    def getFormattedVersionString(self, version):
+        if(version.find("MMDD") != -1):
+            version = version.replace("MMDD", date.today().strftime("%m%d"))
+        return version
+
     def expandGroovyFile(self, config_dict, code_type = 'driver'):
         # Process the params
         input_groovy_file = Path(config_dict['file'])
@@ -334,6 +344,9 @@ class HubitatCodeBuilder:
         self._alternate_vid = alternate_vid
         self._alternate_template = alternate_template
         self._alternate_module = alternate_module
+        self._current_version = self.getFormattedVersionString((config_dict['version'] if 'version' in config_dict else self.default_version))
+        r['version'] = self._current_version
+        self.log.debug("Expanding using version: {}".format(self._current_version))
         self._config_dict = config_dict
         
         # Reset the definition string
@@ -341,6 +354,7 @@ class HubitatCodeBuilder:
 
         r_extra = self._innerExpandGroovyFile(self.getInputDir(code_type) / input_groovy_file, self.getBuildDir(code_type) / output_groovy_file)
         r.update(r_extra)
+        
         
         self.log.info('DONE expanding "' + input_groovy_file.name + '" to "' + output_groovy_file.name + '"!')
         return(r)
@@ -412,8 +426,10 @@ class HubitatCodeBuilder:
     def expandGroovyFilesAndPush(self, code_files, code_type = 'driver'):
         j=0
         used_driver_list = {}
+        self.log.info("Starting expandGroovyFilesAndPush(code_type={})".format(code_type))
         for d in code_files:
             aof = None
+            expanded_result = None
             if('alternate_output_filename' in d and d['alternate_output_filename'] != ''):
                 expanded_result = self.expandGroovyFile(d, code_type=code_type)
                 aof = d['alternate_output_filename']
@@ -422,24 +438,67 @@ class HubitatCodeBuilder:
             self.log.debug(expanded_result)
             output_groovy_file = str(self.getBuildDir(code_type) / self.getOutputGroovyFile(d['file'], alternate_output_filename=aof))
             if(d['id'] != 0):
+                self.log.info("Working on code with id: {}".format(d['id']))
                 j += 1
+                # If we have an MD5 for an older version, check if the MD5 doesn't change if we generate
+                # with that older version set in the file. This avoids "updating" files when the only change
+                # is the version.
                 output_groovy_file_md5 = self.getCheckSumOfFile(output_groovy_file)
-                self.log.debug('MD5 for file {}: {}'.format(d['id'], output_groovy_file_md5))
+                self.log.debug('MD5 for file {} (version: {}): {}'.format(d['id'], self._current_version, output_groovy_file_md5))
                 self.log.debug('push_to_dir:' + str(output_groovy_file))
-                if(code_type == 'driver' and d['id'] in self.driver_checksums and output_groovy_file_md5 == self.driver_checksums[d['id']]):
-                    self.log.debug('Skipping updating code id {} since the MD5 matches.'.format(d['id']))
-                elif(code_type == 'app' and d['id'] in self.app_checksums and output_groovy_file_md5 == self.app_checksums[d['id']]):
-                    self.log.debug('Skipping updating app id {} since the MD5 matches.'.format(d['id']))
-                else:
+                d['version'] = self._current_version
+                md5_match = False
+                old_code_version = None
+                old_code_checksum = None
+                if(code_type == 'driver' and d['id'] in self.driver_checksums):
+                    old_code_version = self.driver_checksums[d['id']][1]
+                    old_code_checksum = self.driver_checksums[d['id']][0]
+                    self.log.debug('Driver old code version: {}, checksum: {}'.format(old_code_version, old_code_checksum))
+                elif(code_type == 'app' and d['id'] in self.app_checksums):
+                    old_code_version = self.app_checksums[d['id']][1]
+                    old_code_checksum = self.app_checksums[d['id']][0]
+                    self.log.debug('App old code version: {}, checksum: {}'.format(old_code_version, old_code_checksum))
+
+                self.log.debug("self._current_version = {}".format(self._current_version))
+
+                if(old_code_version != None):
+                    if(output_groovy_file_md5 == old_code_checksum):
+                        if(old_code_version != self._current_version):
+                            self.log.error("Correct MD5, but old_code_version ({}) != _current_version ({})".format(old_code_version, self._current_version))
+                        self.log.debug('Skipping updating code id {} since the MD5 matches. (old_code_version={})'.format(d['id'], old_code_version))
+                        md5_match = True
+                    else:
+                        self.log.debug('Checking to see if the MD5 matches when using the same version number as the MD5 for {}. (old_code_version={})'.format(d['id'], old_code_version))
+                        new_version = self._current_version
+                        d['version'] = old_code_version
+                        expanded_result = self.expandGroovyFile(d, code_type=code_type)
+                        self.log.debug(expanded_result)
+                        output_groovy_file_md5 = self.getCheckSumOfFile(output_groovy_file)
+                        self.log.debug('MD5 for file {} with version {}: {}'.format(d['id'], d['version'], output_groovy_file_md5))
+                        if(output_groovy_file_md5 == old_code_checksum):
+                            md5_match = True
+                            self.log.debug('Skipping updating code id {} since the MD5 matches when using the old version ({}).'.format(d['id'], old_code_version))
+                            self._current_version = old_code_version
+                        else:
+                            self._current_version = new_version
+                            d['version'] = new_version
+                            self.log.debug('Updating code id {} since the MD5 DOESN\'T match when using the old version ({}), so going for the new version: {}.'.format(d['id'], old_code_version, new_version))
+                            # Remake the latest version
+                            expanded_result = self.expandGroovyFile(d, code_type=code_type)
+                            output_groovy_file_md5 = self.getCheckSumOfFile(output_groovy_file)
+                            self.log.debug('Reverted to MD5 for file {} with version {}: {}'.format(d['id'], d['version'], output_groovy_file_md5))
+                            self.log.debug(expanded_result)
+                
+                if(md5_match == False):
                     r = self.hubitat_hubspider.push_code(code_type, d['id'], self.getBuildDir(code_type) / self.getOutputGroovyFile(d['file'], alternate_output_filename=aof))
                     if(isinstance(r, int) != True and 'source' in r):
                         # We got a successful update, save the checksum
                         if(code_type == 'driver'):
-                            self.driver_checksums[d['id']] = output_groovy_file_md5
-                            self.log.debug('MD5 for returned code {}: {}'.format(d['id'], self.driver_checksums[d['id']]))
+                            self.driver_checksums[d['id']] = (output_groovy_file_md5, d['version'])
+                            self.log.debug('MD5 for returned code {}: {} (version: {})'.format(d['id'], self.driver_checksums[d['id']], d['version']))
                         else:
-                            self.app_checksums[d['id']] = output_groovy_file_md5
-                            self.log.debug('MD5 for returned code {}: {}'.format(d['id'], self.app_checksums[d['id']]))
+                            self.app_checksums[d['id']] = (output_groovy_file_md5, d['version'])
+                            self.log.debug('MD5 for returned code {}: {} (version: {})'.format(d['id'], self.app_checksums[d['id']], d['version']))
                     
 
                 if(code_type == 'driver'):

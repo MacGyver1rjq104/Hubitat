@@ -13,7 +13,7 @@
 
 from datetime import date
 
-driverVersion = "v1.0.MMDDTb"
+driverVersion = "v0.0.0MMDDb"
 
 def getDriverVersion(driverVersionSpecial=None):
     if(driverVersionSpecial != None):
@@ -35,7 +35,7 @@ def getHeaderLicense(driverVersionSpecial=None):
     return """/**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: """ + driverVersionActual + """
+ *  Version: """ + driverVersionActual + """
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
