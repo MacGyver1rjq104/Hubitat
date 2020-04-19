@@ -516,9 +516,13 @@ class HubitatCodeBuilder:
                     self.log.debug("Just worked on Driver ID " + str(id))
                 elif(code_type == 'app'):
                     id = int(d['id'])
+                    #print(self.he_apps_dict[id])
+                    expanded_result.pop('name')
                     self.he_apps_dict[id].update(expanded_result)
+                    #print(self.he_apps_dict[id])
                     if(id in self.he_apps_dict):
                         used_code_list[id] = self.he_apps_dict[id]
+                    #print(used_code_list[id])
                     self.log.debug("Just worked on App ID " + str(id))
             else:
                 self.log.debug("We don't have an ID for '{}' yet, so let us make one...".format(expanded_result['name']))

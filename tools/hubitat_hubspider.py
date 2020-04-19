@@ -230,7 +230,7 @@ class HubitatHubSpider:
       ndict[id]['oauthEnabled'] = ntree.xpath('//td/div')[1].text.strip() == 'enabled'
       ndict[id]['lastModified'] = parser.parse(ntree.xpath('//td')[3].text.strip(), tzinfos=tzinfos)
       #print(id)
-      #print(ndict[id]['name'])
+      #print('Name: ' + ndict[id]['name'])
       #print(ndict[id]['namespace'])
       #print(ndict[id]['oauth'])
       #print(ndict[id]['lastModified'])
