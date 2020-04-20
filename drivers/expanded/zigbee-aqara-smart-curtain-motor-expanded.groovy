@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Code Version: v0.9.1.0419b
+ *  Version: v0.9.1.0420b
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ metadata {
 
         command "calibrationMode"
 
+        command "getPosition"
+        command "getPositionAlt"
+
         //command "sendAttribute", [[name:"Attribute*", type: "STRING", description: "Zigbee Attribute"]]
 
         // Fingerprint for Xiaomi Aqara Smart Curtain Motor (ZNCLDJ11LM)
@@ -126,6 +129,9 @@ private getCOMMAND_OPEN() { 0x00 }
 private getCOMMAND_CLOSE() { 0x01 }
 private getCOMMAND_PAUSE() { 0x02 }
 private getENCODING_SIZE() { 0x39 }
+// https://github.com/zigbeer/zcl-id/blob/master/definitions/cluster_defs.json
+// https://github.com/zigbeer/zcl-id/blob/master/definitions/common.json
+// https://github.com/TedTolboom/com.xiaomi-mi-zigbee/blob/master/drivers/curtain.hagl04/device.js
 
 def refresh() {
     logging("refresh() model='${getDeviceDataByName('model')}'", 10)
@@ -243,9 +249,9 @@ def parse(description) {
                 //sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
             } else {
                 hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
-                //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
+                allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(0x0013, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
                 //allActions.add(new hubitat.device.HubAction("delay 1000"))
-                allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0], hubitat.device.Protocol.ZIGBEE))
+                //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0], hubitat.device.Protocol.ZIGBEE))
                 sendHubCommand(allActions)
             }
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
@@ -270,6 +276,26 @@ def parse(description) {
     return cmds
     // parse() Generic footer ENDS here
     // END:  getGenericZigbeeParseFooter()
+}
+
+def getPosition() {
+    logging("getPosition()", 1)
+	def cmd = []
+	cmd += zigbee.readAttribute(0x0013, 0x0055)
+    cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
+    cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)
+    logging("cmd: $cmd", 1)
+    return cmd 
+}
+
+def getPositionAlt() {
+    logging("getPositionAlt()", 1)
+	def cmd = []
+	cmd += zigbee.readAttribute(0x0013, 0x0055, [mfgCode: "0x115F"])
+    cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021, [mfgCode: "0x115F"])
+    cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055, [mfgCode: "0x115F"])
+    logging("cmd: $cmd", 1)
+    return cmd 
 }
 
 def positionEvent(curtainPosition) {
@@ -661,7 +687,7 @@ ArrayList setPosition(position) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v0.9.1.0419b"
+    String version = "v0.9.1.0420b"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

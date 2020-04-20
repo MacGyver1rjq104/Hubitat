@@ -114,7 +114,7 @@ def main():
     log.debug(hhs.login())
 
     # Setup the Package Manager objects
-    pm = HubitatPackageManagerTool("Markus Liljergren", "2.1.7", 
+    pm = HubitatPackageManagerTool("Markus", "2.1.7", 
         gitHubUrl="https://github.com/markus-li/Hubitat")
 
     t4he_pkg = HubitatPackageManagerPackage("Tasmota for Hubitat Elevation", 
@@ -381,7 +381,7 @@ def main():
         #{'id': 867}, {'id': 868},  # Universal Drivers TESTING
         {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
         #{'id': 865}
-        #{'id': 801}, #{'id': 579},  # Zigbee drivers
+        {'id': 801}, #{'id': 579},  # Zigbee drivers
     #     {'id':587},  # Wifi Curtain Wall Panel
     #    {'id':590},
     #    {'id':651},    # Sensor - Distance
