@@ -109,7 +109,8 @@ Map mainPage() {
                 //input(name: "refreshDevices", type: "bool", defaultValue: "false", submitOnChange: true, title: "Refresh Devices", description: "Refresh Devices Desc")
                 href("resultPage", title:getMaterialIcon('autorenew') + "Result Page", description: "")
                 href("refreshDevices", title:getMaterialIcon('autorenew') + "Refresh Devices", description: "")
-                
+                Integer numDevices = 0
+                Integer numChildDevices = 0
                 getAllTasmotaDevices().each { rawDev ->
                 //state.devices.each { rawDev ->
                     def cDev = getTasmotaDevice(rawDev.deviceNetworkId)
@@ -117,6 +118,8 @@ Map mainPage() {
                     if(cDev != null) {
                         href("configureTasmotaDevice", title:"${getMaterialIcon('', 'he-bulb_1 icon-small')} $cDev.label", description:"", params: [did: cDev.deviceNetworkId])
                         
+                        numDevices += 1
+
                         Map lastActivity = getTimeStringSinceDateWithMaximum(cDev.getLastActivity(), 2*60*60*1000)
                         // Status
                         def deviceStatus = cDev.currentState('presence')?.value
@@ -146,6 +149,7 @@ Map mainPage() {
                         childDevs.each {
                             logging("Child: $it.id, label: $it.label, driver: $it.data.driver", 1)
                             childDevsFiltered += ['id': it.id.toInteger(), 'label': it.label, 'driver': it.data.driver]
+                            numChildDevices += 1
                         }
                         childDevsFiltered.sort({ a, b -> a["id"] <=> b["id"] })
                         logging("Children: $childDevsFiltered", 1)
@@ -171,8 +175,9 @@ Map mainPage() {
                         //%7B%22did%22%3A%225002915AFD0A%22%7D
                         //%7B%22did%22%3A%222CF43222E6AD%22%7D
                     }
-
                 }
+                paragraph("<div style=\"margin: 8px; text-align: right;\">$numDevices Parent device${numDevices == 1 ? '' : 's'}" + 
+                          " + $numChildDevices Child device${numChildDevices == 1 ? '' : 's'} installed</div>")
             }
             /*section(getElementStyle('header', "More things"), hideable: true, hidden: true){
                 paragraph("Select the devices to configure, if the device doesn't use a compatible driver it will be ignored, so selecting too many or the wrong ones, doesn't matter. Easiest is probably to just select all devices. Only Parent devices are shown.")
