@@ -17,6 +17,8 @@ metadata {
         #!include:getDefaultMetadataCommands()
         command "sendCommand", [[name:"Command*", type: "STRING", description: "Tasmota Command"],
             [name:"Argument", type: "STRING", description: "Argument (optional)"]]
+        
+        command "parseJSON", [[name:"JSON*", type: "STRING", description: "Tasmota Status as JSON"]]
 	}
 
 	preferences {
@@ -214,6 +216,12 @@ boolean parseResult(result) {
     boolean missingChild = false
     missingChild = parseResult(result, missingChild)
     return missingChild
+}
+
+void parseJSON(jsonData) {
+    boolean missingChild = false
+    def jsonSlurper = new JsonSlurper()
+    parseResult(jsonSlurper.parseText(jsonData), missingChild)
 }
 
 boolean parseResult(result, missingChild) {

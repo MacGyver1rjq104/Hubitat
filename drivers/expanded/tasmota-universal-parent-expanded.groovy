@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0419Tb
+ *  Version: v1.0.1.0420Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -64,6 +64,8 @@ metadata {
         // END:  getDefaultMetadataCommands()
         command "sendCommand", [[name:"Command*", type: "STRING", description: "Tasmota Command"],
             [name:"Argument", type: "STRING", description: "Argument (optional)"]]
+        
+        command "parseJSON", [[name:"JSON*", type: "STRING", description: "Tasmota Status as JSON"]]
 	}
 
 	preferences {
@@ -912,6 +914,12 @@ boolean parseResult(result) {
     return missingChild
 }
 
+void parseJSON(jsonData) {
+    boolean missingChild = false
+    def jsonSlurper = new JsonSlurper()
+    parseResult(jsonSlurper.parseText(jsonData), missingChild)
+}
+
 boolean parseResult(result, missingChild) {
     //logging("Entered parseResult 1", 100)
     boolean log99 = logging("parseResult: $result", 99)
@@ -1647,7 +1655,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.1.0419Tb"
+    String version = "v1.0.1.0420Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)

@@ -21,7 +21,7 @@
       "id": "daf8333a-3b78-5ad0-af46-188e1cdd32ba",
       "internalId": 865,
       "name": "Tasmota - Universal Parent",
-      "version": "v1.0.1.0419Tb",
+      "version": "v1.0.1.0420Tb",
       "namespace": "tasmota",
       "location": "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-parent-expanded.groovy",
       "required": true

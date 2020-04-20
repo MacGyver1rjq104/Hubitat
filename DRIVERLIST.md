@@ -2,7 +2,7 @@
 These are the currently available drivers (updated: 2020-04-20):
 
 **Parent Device Drivers**
-* [Universal Parent](https://github.com/markus-li/Hubitat/blob/development/drivers/expanded/tasmota-universal-parent-expanded.groovy) v1.0.1.0419Tb
+* [Universal Parent](https://github.com/markus-li/Hubitat/blob/development/drivers/expanded/tasmota-universal-parent-expanded.groovy) v1.0.1.0420Tb
 
 **Child Device Drivers**
 * [Universal Bulb/Light (Child)](https://github.com/markus-li/Hubitat/blob/development/drivers/expanded/tasmota-universal-bulb-light-child-expanded.groovy) v1.0.1.0419Tb
