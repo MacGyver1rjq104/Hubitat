@@ -159,6 +159,22 @@ div.mdl-button--raised h4.pre {
     content: "";
 }
 
+.mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield {
+    width: 100%;
+}
+
+td.childlist-cell {
+    border-top: 2px dotted #000000;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+td.childlist-cell a {
+    display: inline;
+}
+.icon-tiny-compact {
+    margin-right: 4px;
+    font-size: 14px;
+}
 @media (min-width: 840px)
 .mdl-cell--8-col, .mdl-cell--8-col-desktop.mdl-cell--8-col-desktop {
     width: calc(76.6666666667% - 16px);

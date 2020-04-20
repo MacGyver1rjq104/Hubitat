@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0419Tb
+ *  Version: v1.0.1.0420Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -614,7 +614,7 @@ def getDeviceConfiguration(String typeId) {
 def getDeviceConfigurationsAsListOption() {
     TreeMap deviceConfigurationsMap = getDeviceConfigurations()
     def items = []
-    deviceConfigurationsMap.each { k, v ->
+    deviceConfigurationsMap.sort({ a, b -> a.key <=> b.key }).each { k, v ->
         def label = v["name"]
         if(v.containsKey("comment") && v["comment"].length() > 0) {
             label += " (${v["comment"]})"
@@ -656,7 +656,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.1.0419Tb"
+    String version = "v1.0.1.0420Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
@@ -731,6 +731,15 @@ Map mainPage() {
                         String firmware = "${cDev.getDeviceDataByName('firmware')}"
                         String driverVersion = "${cDev.getDeviceDataByName('driver')}"
                         String driverName = "${getDeviceDriverName(cDev)}"
+                        List childDevs = runDeviceCommand(rawDev, 'getChildDevices')
+                        //logging("childDevs: $childDevs", 1)
+                        List childDevsFiltered = []
+                        childDevs.each {
+                            logging("Child: $it.id, label: $it.label, driver: $it.data.driver", 1)
+                            childDevsFiltered += ['id': it.id.toInteger(), 'label': it.label, 'driver': it.data.driver]
+                        }
+                        childDevsFiltered.sort({ a, b -> a["id"] <=> b["id"] })
+                        logging("Children: $childDevsFiltered", 1)
                         getDeviceTable([href:           [href:getDeviceConfigLink(cDev.id)],
                                         ip:             [data:rawDev['data']['ip']],
                                         //[data:runDeviceCommand(getTasmotaDevice(cDev.deviceNetworkId), 'getDeviceDataByName', ['uptime'])],])
@@ -740,7 +749,8 @@ Map mainPage() {
                                         firmware:       [data:firmware, red:firmware == "null"],
                                         driverVersion:  [data:driverVersion, red:driverVersion == "null"],
                                         deviceStatus:   [data:deviceStatus, red:deviceStatus != "Available"],
-                                        driverName:     [data:driverName, red:driverName == "null"],])
+                                        driverName:     [data:driverName, red:driverName == "null"],
+                                        childDevices:   childDevsFiltered,])
                                 // it.label
                             //btnParagraph([[href:getDeviceConfigLink(cDev.id), target:"_blank", title:"Config"],
                             //            [href:getDeviceTasmotaConfigLink(cDev['data']['ip']), target:"_blank", title:'Tasmota&nbsp;Web&nbsp;Config (' + cDev['data']['ip'] + ')']],
@@ -957,9 +967,24 @@ String getDeviceTable(deviceInfo, String extra="") {
 
     content += '</tr>'
     content += '<tr>'
-
+    content += "<td class=\"childlist-cell\" colspan=\"9\" >${getChildDeviceHREFList(deviceInfo['childDevices'])}</ td>"
     content += '</tr></table>' // + extra
     paragraph(content) 
+}
+
+String getChildDeviceHREFList(childDevices) {
+    String r = ''
+    String prefix = ''
+    // id:1091, label:Parent Testing (192.168.10.146) (POWER1), driver:v1.0.0222Tb
+    childDevices.each {
+        r += prefix
+        r += "<a href=\"${getDeviceConfigLink(it.id)}\" target=\"_blank\">"
+        r += "${getMaterialIcon('', 'he-settings1 icon-tiny-compact')}"
+        r += "${it.label.replace(' ', '&nbsp;')}"
+        r += "</a>"
+        prefix = ',&nbsp; '
+    }
+    return r
 }
 
 def configureTasmotaDevice(params) {
@@ -1808,6 +1833,22 @@ div.mdl-button--raised h4.pre {
     content: "";
 }
 
+.mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield {
+    width: 100%;
+}
+
+td.childlist-cell {
+    border-top: 2px dotted #000000;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+td.childlist-cell a {
+    display: inline;
+}
+.icon-tiny-compact {
+    margin-right: 4px;
+    font-size: 14px;
+}
 @media (min-width: 840px)
 .mdl-cell--8-col, .mdl-cell--8-col-desktop.mdl-cell--8-col-desktop {
     width: calc(76.6666666667% - 16px);
@@ -1932,7 +1973,7 @@ String getAvailableDevicesList() {
     //options.each{optionsList << [key: it.key, value: it.value]}
     String deviceList = ""
     options.sort({ a, b -> a.key <=> b.key }).each{
-        deviceList += it.value + "<br>"
+        deviceList += "<a href=\"http://${convertHexToIP(it.key)}\" target=\"_blank\" >" + it.value + "</a><br>"
     }
 
     String header = """<style>
@@ -1958,7 +1999,7 @@ String getAvailableDevicesList() {
             border-left-style: outset;
             border-left-width: 2px;
         }
-        </style><div class="btn-listing btn btn-default btn-lg btn-block device-btn-filled  btn-device  mdl-shadow--2dp">
+        </style><div class="btn-listing btn btn-default btn-lg btn-block device-btn-filled mdl-shadow--2dp">
             <span style="">""" + title + """</span><br>
             <span id="devicesSelecteddevlist" class="device-text" style="text-align: left;">"""
     String footer = "</span></div>"
@@ -2070,7 +2111,8 @@ void resetDeviceDiscovery(){
 Map devicesDiscovered() {
 	def vdevices = getVerifiedDevices()
 	def map = [:]
-	vdevices.each {
+    
+	vdevices.sort({ a, b -> a.value.networkAddress <=> b.value.networkAddress }).each {
 		def value = "${it.value.name}"
 		def key = "${it.value.mac}"
 		map["${key}"] = value
@@ -2754,6 +2796,9 @@ String getMinimizedDriverName(String driverName) {
     driverName = driverName.replaceAll("(?i) \\(parent\\)", "").replaceAll("(?i) parent", "").replaceAll("(?i)parent", "")
     logging("driverName: $driverName", 1)
 
+    // Remove IP as well
+    driverName = driverName.replaceFirst("\\(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\)", "").replaceFirst("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}", "");
+
     if(driverName.toLowerCase().startsWith('tasmota - ')) {
         driverName = driverName.substring(10, driverName.length())
     }
@@ -2761,6 +2806,9 @@ String getMinimizedDriverName(String driverName) {
         driverName = driverName.substring(10, driverName.length())
     }
     driverName = driverName.replaceAll("Generic Component ", "")
+    driverName = driverName.trim()
+    if(driverName == '') driverName = "Device"
+    
     logging("getMinimizedDriverName(driverName=$driverName) end", 1)
     return driverName
 }

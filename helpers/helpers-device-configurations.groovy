@@ -543,7 +543,7 @@ def getDeviceConfiguration(String typeId) {
 def getDeviceConfigurationsAsListOption() {
     TreeMap deviceConfigurationsMap = getDeviceConfigurations()
     def items = []
-    deviceConfigurationsMap.each { k, v ->
+    deviceConfigurationsMap.sort({ a, b -> a.key <=> b.key }).each { k, v ->
         def label = v["name"]
         if(v.containsKey("comment") && v["comment"].length() > 0) {
             label += " (${v["comment"]})"

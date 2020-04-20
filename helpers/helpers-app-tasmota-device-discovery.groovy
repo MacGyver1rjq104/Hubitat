@@ -98,7 +98,7 @@ String getAvailableDevicesList() {
     //options.each{optionsList << [key: it.key, value: it.value]}
     String deviceList = ""
     options.sort({ a, b -> a.key <=> b.key }).each{
-        deviceList += it.value + "<br>"
+        deviceList += "<a href=\"http://${convertHexToIP(it.key)}\" target=\"_blank\" >" + it.value + "</a><br>"
     }
 
     String header = """<style>
@@ -124,7 +124,7 @@ String getAvailableDevicesList() {
             border-left-style: outset;
             border-left-width: 2px;
         }
-        </style><div class="btn-listing btn btn-default btn-lg btn-block device-btn-filled  btn-device  mdl-shadow--2dp">
+        </style><div class="btn-listing btn btn-default btn-lg btn-block device-btn-filled mdl-shadow--2dp">
             <span style="">""" + title + """</span><br>
             <span id="devicesSelecteddevlist" class="device-text" style="text-align: left;">"""
     String footer = "</span></div>"
@@ -233,7 +233,8 @@ void resetDeviceDiscovery(){
 Map devicesDiscovered() {
 	def vdevices = getVerifiedDevices()
 	def map = [:]
-	vdevices.each {
+    
+	vdevices.sort({ a, b -> a.value.networkAddress <=> b.value.networkAddress }).each {
 		def value = "${it.value.name}"
 		def key = "${it.value.mac}"
 		map["${key}"] = value

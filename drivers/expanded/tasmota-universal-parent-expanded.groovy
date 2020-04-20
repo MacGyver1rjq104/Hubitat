@@ -675,7 +675,7 @@ def getDeviceConfiguration(String typeId) {
 def getDeviceConfigurationsAsListOption() {
     TreeMap deviceConfigurationsMap = getDeviceConfigurations()
     def items = []
-    deviceConfigurationsMap.each { k, v ->
+    deviceConfigurationsMap.sort({ a, b -> a.key <=> b.key }).each { k, v ->
         def label = v["name"]
         if(v.containsKey("comment") && v["comment"].length() > 0) {
             label += " (${v["comment"]})"
@@ -3207,6 +3207,9 @@ String getMinimizedDriverName(String driverName) {
     driverName = driverName.replaceAll("(?i) \\(parent\\)", "").replaceAll("(?i) parent", "").replaceAll("(?i)parent", "")
     logging("driverName: $driverName", 1)
 
+    // Remove IP as well
+    driverName = driverName.replaceFirst("\\(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\)", "").replaceFirst("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}", "");
+
     if(driverName.toLowerCase().startsWith('tasmota - ')) {
         driverName = driverName.substring(10, driverName.length())
     }
@@ -3214,6 +3217,9 @@ String getMinimizedDriverName(String driverName) {
         driverName = driverName.substring(10, driverName.length())
     }
     driverName = driverName.replaceAll("Generic Component ", "")
+    driverName = driverName.trim()
+    if(driverName == '') driverName = "Device"
+    
     logging("getMinimizedDriverName(driverName=$driverName) end", 1)
     return driverName
 }

@@ -9,7 +9,7 @@
       "id": "cec402ae-a94c-5118-a88d-204c8b6b0e01",
       "internalId": 289,
       "name": "Tasmota Device Manager",
-      "version": "v1.0.1.0419Tb",
+      "version": "v1.0.1.0420Tb",
       "namespace": "tasmota",
       "location": "https://raw.githubusercontent.com/markus-li/Hubitat/development/apps/expanded/tasmota-device-manager-expanded.groovy",
       "required": true,

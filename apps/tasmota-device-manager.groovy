@@ -140,6 +140,15 @@ Map mainPage() {
                         String firmware = "${cDev.getDeviceDataByName('firmware')}"
                         String driverVersion = "${cDev.getDeviceDataByName('driver')}"
                         String driverName = "${getDeviceDriverName(cDev)}"
+                        List childDevs = runDeviceCommand(rawDev, 'getChildDevices')
+                        //logging("childDevs: $childDevs", 1)
+                        List childDevsFiltered = []
+                        childDevs.each {
+                            logging("Child: $it.id, label: $it.label, driver: $it.data.driver", 1)
+                            childDevsFiltered += ['id': it.id.toInteger(), 'label': it.label, 'driver': it.data.driver]
+                        }
+                        childDevsFiltered.sort({ a, b -> a["id"] <=> b["id"] })
+                        logging("Children: $childDevsFiltered", 1)
                         getDeviceTable([href:           [href:getDeviceConfigLink(cDev.id)],
                                         ip:             [data:rawDev['data']['ip']],
                                         //[data:runDeviceCommand(getTasmotaDevice(cDev.deviceNetworkId), 'getDeviceDataByName', ['uptime'])],])
@@ -149,7 +158,8 @@ Map mainPage() {
                                         firmware:       [data:firmware, red:firmware == "null"],
                                         driverVersion:  [data:driverVersion, red:driverVersion == "null"],
                                         deviceStatus:   [data:deviceStatus, red:deviceStatus != "Available"],
-                                        driverName:     [data:driverName, red:driverName == "null"],])
+                                        driverName:     [data:driverName, red:driverName == "null"],
+                                        childDevices:   childDevsFiltered,])
                                 // it.label
                             //btnParagraph([[href:getDeviceConfigLink(cDev.id), target:"_blank", title:"Config"],
                             //            [href:getDeviceTasmotaConfigLink(cDev['data']['ip']), target:"_blank", title:'Tasmota&nbsp;Web&nbsp;Config (' + cDev['data']['ip'] + ')']],
@@ -366,9 +376,24 @@ String getDeviceTable(deviceInfo, String extra="") {
 
     content += '</tr>'
     content += '<tr>'
-
+    content += "<td class=\"childlist-cell\" colspan=\"9\" >${getChildDeviceHREFList(deviceInfo['childDevices'])}</ td>"
     content += '</tr></table>' // + extra
     paragraph(content) 
+}
+
+String getChildDeviceHREFList(childDevices) {
+    String r = ''
+    String prefix = ''
+    // id:1091, label:Parent Testing (192.168.10.146) (POWER1), driver:v1.0.0222Tb
+    childDevices.each {
+        r += prefix
+        r += "<a href=\"${getDeviceConfigLink(it.id)}\" target=\"_blank\">"
+        r += "${getMaterialIcon('', 'he-settings1 icon-tiny-compact')}"
+        r += "${it.label.replace(' ', '&nbsp;')}"
+        r += "</a>"
+        prefix = ',&nbsp; '
+    }
+    return r
 }
 
 def configureTasmotaDevice(params) {
