@@ -45,6 +45,7 @@ metadata {
 
         command "getPosition"
         command "getPositionAlt"
+        command "getBattery"
 
         //command "sendAttribute", [[name:"Attribute*", type: "STRING", description: "Zigbee Attribute"]]
 
@@ -146,6 +147,9 @@ def parse(description) {
             logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 10)
             //read attr - raw: 63A10100000804042000, dni: 63A1, endpoint: 01, cluster: 0000, size: 08, attrId: 0404, encoding: 20, command: 0A, value: 00, parseMap:[raw:63A10100000804042000, dni:63A1, endpoint:01, cluster:0000, size:08, attrId:0404, encoding:20, command:0A, value:00, clusterInt:0, attrInt:1028]
         }
+    } else if (msgMap["clusterId"] == "0013" && msgMap["command"] == "00") {
+        logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 0)
+        // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E, parseMap:[raw:63A1010000200500420C6C756D692E6375727461696E, dni:63A1, endpoint:01, cluster:0000, size:20, attrId:0005, encoding:42, command:0A, value:lumi.curtain, clusterInt:0, attrInt:5]
     } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0005") {
         logging("Unhandled KNOWN event (pressed button) - description:${description} | parseMap:${msgMap}", 0)
         // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E, parseMap:[raw:63A1010000200500420C6C756D692E6375727461696E, dni:63A1, endpoint:01, cluster:0000, size:20, attrId:0005, encoding:42, command:0A, value:lumi.curtain, clusterInt:0, attrInt:5]
@@ -176,7 +180,7 @@ def parse(description) {
             // This is sent just after sending a command to open/close and just after the curtain is done moving
 			long theValue = Long.parseLong(msgMap["value"], 16)
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
-			logging("GETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 10)
+			logging("GOT POSITION DATA: long => ${theValue}, BigDecimal => ${floatValue}", 1)
 			curtainPosition = floatValue.intValue()
             // Original 100%:
             // msgMap: [raw:C49701000D1C5500390000C84200F02300000000, dni:C497, endpoint:01, cluster:000D, size:1C, attrId:0055, encoding:39, command:0A, value:42C80000, clusterInt:13, attrInt:85, additionalAttrs:[[value:00000000, encoding:23, attrId:F000, consumedBytes:7, attrInt:61440]]]
@@ -194,21 +198,23 @@ def parse(description) {
             //    sendEvent(name:"commandValue", value: "-1")
                 
             //}
-            if(getDeviceDataByName('model') == "lumi.curtain") {
-                positionEvent(curtainPosition)
-                //sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
-            } else {
+            if(getDeviceDataByName('model') != "lumi.curtain" && msgMap["command"] == "0A" && curtainPosition == 0) {
+                logging("Sending request for the actual position...", 1)
                 hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
-                allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(0x0013, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
+                allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)[0], hubitat.device.Protocol.ZIGBEE))
                 //allActions.add(new hubitat.device.HubAction("delay 1000"))
                 //allActions.add(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0], hubitat.device.Protocol.ZIGBEE))
                 sendHubCommand(allActions)
+            } else {
+                logging("SETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 10)
+                positionEvent(curtainPosition)
+                //sendHubCommand(new hubitat.device.HubAction(zigbee.readAttribute(CLUSTER_WINDOW_COVERING, 0x0008)[0]))
             }
 		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
 			logging("done…", 1)
 			cmds += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
 		}
-	} else if (msgMap["clusterId"] == "0001" && msgMap["attrId"] == "0021") {
+	} else if (msgMap["cluster"] == "0001" && msgMap["attrId"] == "0021") {
         if(getDeviceDataByName('model') != "lumi.curtain") {
             def bat = msgMap["value"]
             long value = Long.parseLong(bat, 16)/2
@@ -226,8 +232,8 @@ def parse(description) {
 def getPosition() {
     logging("getPosition()", 1)
 	def cmd = []
-	cmd += zigbee.readAttribute(0x0013, 0x0055)
-    cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
+	//cmd += zigbee.readAttribute(0x0013, 0x0055)
+    //cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
     cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)
     logging("cmd: $cmd", 1)
     return cmd 
@@ -236,9 +242,20 @@ def getPosition() {
 def getPositionAlt() {
     logging("getPositionAlt()", 1)
 	def cmd = []
-	cmd += zigbee.readAttribute(0x0013, 0x0055, [mfgCode: "0x115F"])
-    cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021, [mfgCode: "0x115F"])
-    cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055, [mfgCode: "0x115F"])
+	cmd += zigbee.readAttribute(0x0013, 0x0055)
+    //cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
+    //cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)
+    logging("cmd: $cmd", 1)
+    return cmd 
+}
+
+def getBattery() {
+    logging("getBattery()", 1)
+	def cmd = []
+    cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
+	//cmd += zigbee.readAttribute(0x0013, 0x0055, [mfgCode: "0x115F"])
+    //cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021, [mfgCode: "0x115F"])
+    //cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055, [mfgCode: "0x115F"])
     logging("cmd: $cmd", 1)
     return cmd 
 }
@@ -248,6 +265,8 @@ def positionEvent(curtainPosition) {
 	//if(mode == true) {
     //    curtainPosition = 100 - curtainPosition
 	//}
+    if(curtainPosition <= 2) curtainPosition = 0
+    if(curtainPosition >= 98) curtainPosition = 100
     if (curtainPosition == 100) {
         logging("Fully Open", 1)
         windowShadeStatus = "open"
@@ -259,7 +278,8 @@ def positionEvent(curtainPosition) {
         windowShadeStatus = "closed"
     }
     logging("device.currentValue('position') = ${device.currentValue('position')}, curtainPosition = $curtainPosition", 1)
-    if(device.currentValue('position') != curtainPosition) {
+    if(curtainPosition < device.currentValue('position') - 1 || curtainPosition > device.currentValue('position') + 1) {
+        
         logging("CHANGING device.currentValue('position') = ${device.currentValue('position')}, curtainPosition = $curtainPosition", 1)
         sendEvent(name:"windowShade", value: windowShadeStatus)
         sendEvent(name:"position", value: curtainPosition)
