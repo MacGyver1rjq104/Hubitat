@@ -109,7 +109,7 @@ class HubitatCodeBuilder:
 
     def __init__(self, hubitat_hubspider, calling_namespace=None, app_dir=Path('./apps'), app_build_dir=Path('./apps/expanded'), \
                  driver_dir=Path('./drivers'), driver_build_dir=Path('./drivers/expanded'), default_version='v0.0.1.MMDDb', \
-                 build_suffix='-expanded', driver_raw_repo_url=None, app_raw_repo_url=None):
+                 build_suffix='-expanded', driver_raw_repo_url='http://127.0.0.1/', app_raw_repo_url='http://127.0.0.1/'):
         self.app_dir = Path(app_dir)
         self.app_build_dir = Path(app_build_dir)
         self.driver_dir = Path(driver_dir)
@@ -124,6 +124,8 @@ class HubitatCodeBuilder:
         #self.log.debug('he_drivers_dict: {}'.format(str(self.he_drivers_dict)))
         self.driver_checksums = {}
         self.app_checksums = {}
+        self.driver_num_updated = 0
+        self.app_num_updated = 0
         self.driver_new = {}
         self.app_new = {}
         self.driver_raw_repo_url = driver_raw_repo_url
@@ -148,9 +150,9 @@ class HubitatCodeBuilder:
         self.calling_namespace = calling_namespace
         self.log.debug('Settings: {}'.format(str(my_locals)))
 
-    def saveChecksums(self):
+    def saveChecksums(self, checksum_file='__hubitat_checksums'):
         try:
-            with open('__hubitat_checksums', 'wb') as f:
+            with open(checksum_file, 'wb') as f:
                 pickle.dump((self.driver_checksums, self.app_checksums), f)
         except FileNotFoundError:
             self.log.error("Couldn't save session to disk!")
@@ -499,9 +501,11 @@ class HubitatCodeBuilder:
                         # We got a successful update, save the checksum
                         if(code_type == 'driver'):
                             self.driver_checksums[d['id']] = (output_groovy_file_md5, d['version'])
+                            self.driver_num_updated += 1
                             self.log.debug('MD5 for returned code {}: {} (version: {})'.format(d['id'], self.driver_checksums[d['id']], d['version']))
                         else:
                             self.app_checksums[d['id']] = (output_groovy_file_md5, d['version'])
+                            self.app_num_updated += 1
                             self.log.debug('MD5 for returned code {}: {} (version: {})'.format(d['id'], self.app_checksums[d['id']], d['version']))
                     
 
