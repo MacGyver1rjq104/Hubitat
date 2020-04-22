@@ -235,6 +235,7 @@ def getBattery() {
     logging("getBattery()", 100)
 	def cmd = []
     cmd += zigbee.readAttribute(CLUSTER_POWER, 0x0021)
+    cmd += zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
 	logging("cmd: $cmd", 1)
     return cmd 
 }
