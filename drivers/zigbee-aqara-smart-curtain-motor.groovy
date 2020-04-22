@@ -522,7 +522,8 @@ ArrayList setLevel(level, duration) {
 
 #!include:getHelperFunctions('all-default')
 
-#!include:getHelperFunctions('driver-metadata')
+// Not using the CSS styling features in this driver, so driver-metadata can be omitted
+//#include:getHelperFunctions('driver-metadata')
 
 #!include:getHelperFunctions('styling')
 
