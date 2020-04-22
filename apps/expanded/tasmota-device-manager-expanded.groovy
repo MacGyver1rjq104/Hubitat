@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0420Tb
+ *  Version: v1.0.1.0422Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -656,7 +656,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.1.0420Tb"
+    String version = "v1.0.1.0422Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
@@ -1486,7 +1486,7 @@ def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
     // disable debug logs after 30 min, unless override is in place
-	if (logLevel != "0" && logLevel != "100") {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(runReset != "DEBUG") {
             log.warn "Debug logging will be disabled in 30 minutes..."
         } else {

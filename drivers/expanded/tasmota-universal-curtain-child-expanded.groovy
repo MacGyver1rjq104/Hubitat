@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0419Tb
+ *  Version: v1.0.1.0422Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,8 +30,12 @@ metadata {
     definition (name: "Tasmota - Universal Curtain (Child)", namespace: "tasmota", author: "Markus Liljergren", importUrl: "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-curtain-child-expanded.groovy") {
         capability "WindowShade"
         capability "Refresh"
+        // These 4 capabilities are included to be compatible with integrations like Alexa:
+        capability "Actuator"
+        capability "Switch"
+        capability "Light"
+        capability "SwitchLevel"
 
-        attribute   "level", "number"
         attribute   "target", "number"
 
         // BEGIN:getMinimumChildAttributes()
@@ -78,6 +82,13 @@ void parse(List<Map> description) {
         if(it.name in ["position", "windowShade"]) {
             logging(it.descriptionText, 100)
             sendEvent(it)
+            if(it.name == "windowShade") {
+                if(it.value == "closed") {
+                    sendEvent(name:"switch", value: 'off')
+                } else {
+                    sendEvent(name:"switch", value: 'on')
+                }
+            }
         } else if(it.name == "level") {
             target = device.currentValue("target")
             if(target != null && target != -1) {
@@ -101,23 +112,28 @@ void parse(List<Map> description) {
                 if(position > margin && position < 100 - margin) {
                     logging('Curtain status: partially open', 100)
                     sendEvent(name: "windowShade", value: "partially open", isStateChange: true)
+                    sendEvent(name: "switch", value: "on", isStateChange: true)
                 } else if(position <= margin) {
                     logging('Curtain status: open', 100)
                     setLevel(0)
                     sendEvent(name: "windowShade", value: "open", isStateChange: true)
+                    sendEvent(name: "switch", value: "on", isStateChange: true)
                 } else if(position >= 100 - margin) {
                     logging('Curtain status: closed', 100)
                     setLevel(100)
                     sendEvent(name: "windowShade", value: "closed", isStateChange: true)
+                    sendEvent(name: "switch", value: "off", isStateChange: true)
                 }
             } else if(tdata == '55AA00070005020400010012') {
                 // Open Event occured
                 logging('Curtain status: opening', 100)
                 sendEvent(name: "windowShade", value: "opening", isStateChange: true)
+                sendEvent(name: "switch", value: "on", isStateChange: true)
             } else if(tdata == '55AA00070005020400010113') {
                 // Close Event occured
                 logging('Curtain status: closing', 100)
                 sendEvent(name: "windowShade", value: "closing", isStateChange: true)
+                sendEvent(name: "switch", value: "on", isStateChange: true)
             }
         } else if(it.name in ["switch"]) {
             logging("Ignored: " + it.descriptionText, 1)
@@ -157,8 +173,16 @@ void open() {
     parent?.componentOpen(this.device)    
 }
 
+void on() {
+    open()
+}
+
 void close() {
     parent?.componentClose(this.device)    
+}
+
+void off() {
+    close()
 }
 
 void stop() {
@@ -182,11 +206,11 @@ void setPosition(BigDecimal targetPosition) {
 }
 
 void setLevel(BigDecimal level) {
-    parent?.componentSetLevel(this.device, level)
+    setPosition(level)
 }
 
 void setLevel(BigDecimal level, BigDecimal duration) {
-    parent?.componentSetLevel(this.device, level, duration)
+    setPosition(level)
 }
 
 /**
@@ -202,7 +226,7 @@ void setLevel(BigDecimal level, BigDecimal duration) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.1.0419Tb"
+    String version = "v1.0.1.0422Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -304,7 +328,7 @@ def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
     // disable debug logs after 30 min, unless override is in place
-	if (logLevel != "0" && logLevel != "100") {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(runReset != "DEBUG") {
             log.warn "Debug logging will be disabled in 30 minutes..."
         } else {

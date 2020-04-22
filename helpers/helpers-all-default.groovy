@@ -41,7 +41,7 @@ def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
     // disable debug logs after 30 min, unless override is in place
-	if (logLevel != "0" && logLevel != "100") {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(runReset != "DEBUG") {
             log.warn "Debug logging will be disabled in 30 minutes..."
         } else {

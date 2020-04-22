@@ -8,3 +8,4 @@ hubitat_hubspider.cfg
 /drivers/expanded/*-testing*-expanded.groovy
 /private
 /_tmpdhcp*
+/.vscode/.ropeproject

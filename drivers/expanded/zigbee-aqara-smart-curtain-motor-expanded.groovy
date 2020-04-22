@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v0.9.1.0422b
+ *  Version: v1.0.0.0422
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -62,8 +62,6 @@ metadata {
 
         command "trackDiscoveryMode"
 
-        //command "getPosition"
-        //command "getPositionAlt"
         //command "getBattery"
 
         // For testing:
@@ -137,6 +135,7 @@ void initializeAdditional() {
     logging("initializeAdditional()", 100)
     cleanModelName()
     makeSchedule()
+    getDriverVersion()
 }
 
 // called from installed()
@@ -572,7 +571,7 @@ ArrayList setLevel(level, duration) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v0.9.1.0422b"
+    String version = "v1.0.0.0422"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -743,7 +742,7 @@ def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
     // disable debug logs after 30 min, unless override is in place
-	if (logLevel != "0" && logLevel != "100") {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(runReset != "DEBUG") {
             log.warn "Debug logging will be disabled in 30 minutes..."
         } else {

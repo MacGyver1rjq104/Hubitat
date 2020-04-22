@@ -36,8 +36,6 @@ metadata {
 
         command "trackDiscoveryMode"
 
-        //command "getPosition"
-        //command "getPositionAlt"
         //command "getBattery"
 
         // For testing:
@@ -99,6 +97,7 @@ void initializeAdditional() {
     logging("initializeAdditional()", 100)
     cleanModelName()
     makeSchedule()
+    getDriverVersion()
 }
 
 // called from installed()
@@ -183,7 +182,8 @@ def parse(description) {
         //read attr - raw: 63A1010102080800204E, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 4E
         //read attr - raw: 63A1010102080800203B, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 3B | parseMap:[raw:63A1010102080800203B, dni:63A1, endpoint:01, cluster:0102, size:08, attrId:0008, encoding:20, command:0A, value:3B, clusterInt:258, attrInt:8]
     } else if (msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
-        logging("KNOWN event (probably battery, but not used) - description:${description} | parseMap:${msgMap}", 0)
+        logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 0)
+        // Xiaomi/Aqara specific data structure, contains data we probably don't need
     } else if (msgMap["cluster"] == "000D" && msgMap["attrId"] == "0055") {
         logging("cluster 000D", 1)
 		if (msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
