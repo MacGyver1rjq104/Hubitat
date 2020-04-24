@@ -107,9 +107,10 @@ class HubitatCodeBuilderError(Exception):
 
 class HubitatCodeBuilder:
 
-    def __init__(self, hubitat_hubspider, calling_namespace=None, app_dir=Path('./apps'), app_build_dir=Path('./apps/expanded'), \
+    def __init__(self, hubitat_hubspider, id_name=None, calling_namespace=None, app_dir=Path('./apps'), app_build_dir=Path('./apps/expanded'), \
                  driver_dir=Path('./drivers'), driver_build_dir=Path('./drivers/expanded'), default_version='v0.0.1.MMDDb', \
                  build_suffix='-expanded', driver_raw_repo_url='http://127.0.0.1/', app_raw_repo_url='http://127.0.0.1/'):
+        self.id_name = id_name
         self.app_dir = Path(app_dir)
         self.app_build_dir = Path(app_build_dir)
         self.driver_dir = Path(driver_dir)
@@ -137,8 +138,11 @@ class HubitatCodeBuilder:
             self.app_raw_repo_url += '/'
             self.log.warn("Had to add a '/' to the self.app_raw_repo_url! You should specify it with a '/' at the end!")
         # Check if we have a saved session
+        checksum_file = '__hubitat_checksums'
+        if(self.id_name != None):
+            checksum_file += '_' + id_name
         try:
-            with open('__hubitat_checksums', 'rb') as f:
+            with open(checksum_file, 'rb') as f:
                 (self.driver_checksums, self.app_checksums) = pickle.load(f)
         except (FileNotFoundError, pickle.UnpicklingError) as e:
             self.log.error("Couldn't restore checksums! {}".format(str(e)))
@@ -152,6 +156,8 @@ class HubitatCodeBuilder:
 
     def saveChecksums(self, checksum_file='__hubitat_checksums'):
         try:
+            if(self.id_name != None):
+                checksum_file += '_' + self.id_name
             with open(checksum_file, 'wb') as f:
                 pickle.dump((self.driver_checksums, self.app_checksums), f)
         except FileNotFoundError:
@@ -429,7 +435,21 @@ class HubitatCodeBuilder:
             wd.close()
             return(content)
 
+    def translateID(self, code_files):
+        for d in code_files:
+            d['id_main'] = d['id']
+            #print("translating: {}".format(d))
+            if(self.id_name is not None):
+                if(self.id_name in d):
+                    d['id'] = d[self.id_name]
+                    
+                else:
+                    d['id'] = 0
+            #print("translated: {}".format(d))
+        return code_files
+
     def expandGroovyFilesAndPush(self, code_files, code_type = 'driver'):
+        code_files = self.translateID(code_files)
         j=0
         used_code_list = {}
         self.log.info("Starting expandGroovyFilesAndPush(code_type={})".format(code_type))
@@ -444,7 +464,7 @@ class HubitatCodeBuilder:
             self.log.debug(expanded_result)
             output_groovy_file = str(self.getBuildDir(code_type) / self.getOutputGroovyFile(d['file'], alternate_output_filename=aof))
             if(d['id'] != 0):
-                self.log.info("Working on code with id: {}".format(d['id']))
+                self.log.info("Working on code with id: {} (id_main={})".format(d['id'], d['id_main']))
                 j += 1
                 # If we have an MD5 for an older version, check if the MD5 doesn't change if we generate
                 # with that older version set in the file. This avoids "updating" files when the only change
@@ -517,7 +537,7 @@ class HubitatCodeBuilder:
                     if(id in self.he_drivers_dict):
                         used_code_list[id] = self.he_drivers_dict[id]
                     #log.debug("code_files 2: {}".format(str(code_files[id])))
-                    self.log.debug("Just worked on Driver ID " + str(id))
+                    self.log.debug("Just worked on Driver ID " + str(id) + " (id_main=" + str(d['id_main']) +")")
                 elif(code_type == 'app'):
                     id = int(d['id'])
                     #print(self.he_apps_dict[id])
@@ -527,19 +547,19 @@ class HubitatCodeBuilder:
                     if(id in self.he_apps_dict):
                         used_code_list[id] = self.he_apps_dict[id]
                     #print(used_code_list[id])
-                    self.log.debug("Just worked on App ID " + str(id))
+                    self.log.debug("Just worked on App ID " + str(id) + " (id_main=" + str(d['id_main']) + ")")
             else:
-                self.log.debug("We don't have an ID for '{}' yet, so let us make one...".format(expanded_result['name']))
+                self.log.debug("We don't have an ID for '{}' yet, so let us make one... (id_main={})".format(expanded_result['name'], d['id_main']))
                 new_id = self.hubitat_hubspider.push_new_code(code_type, output_groovy_file)
                 if(new_id > 0):
-                    new_entry = {'id': new_id, 'name': expanded_result['name'], 'file': str(Path(output_groovy_file).name).replace(self.build_suffix + '.', '.')}
+                    new_entry = {'id': new_id, 'id_main': d['id_main'], 'name': expanded_result['name'], 'file': str(Path(output_groovy_file).name).replace(self.build_suffix + '.', '.')}
                     if(code_type == 'driver'):
                         self.driver_new[new_id] = new_entry
                     if(code_type == 'app'):
                         self.app_new[new_id] = new_entry
-                    self.log.info("Added '{}' with the new ID {}!".format(expanded_result['name'], new_id))
+                    self.log.info("Added '{}' with the new ID {} (id_main={})!".format(expanded_result['name'], new_id, d['id_main']))
                 else:
-                    self.log.error("FAILED to add '{}'! Something unknown went wrong...".format(expanded_result['name']))
+                    self.log.error("FAILED to add '{}'! Something unknown went wrong... (id_main={})".format(expanded_result['name'], d['id_main']))
 
         self.log.info('Had '+str(j)+' {} files to work on...'.format(code_type))
         #self.setUsedDriverList(used_code_list)

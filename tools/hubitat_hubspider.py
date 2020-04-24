@@ -39,8 +39,9 @@ class HubitatHubSpider:
   test_login = False
   is_logged_in = False
 
-  def __init__(self, hubitatIP = None, configFile = None):
+  def __init__(self, hubitatIP = None, configFile = None, id_name=None):
     self.log = logging.getLogger(__name__)
+    self.id_name = id_name
     if(hubitatIP == None):
       if(configFile != None):
         self.log.info("Loading settings from config file")
@@ -129,7 +130,10 @@ class HubitatHubSpider:
     if (self.session == None):
       # Check if we have a saved session
       try:
-        with open('__hubitat_session', 'rb') as f:
+        hubitat_session = '__hubitat_session'
+        if(self.id_name is not None):
+          hubitat_session += '_' + self.id_name
+        with open(hubitat_session, 'rb') as f:
           self.session = pickle.load(f)
         self.test_login = True
         self.is_logged_in = False
@@ -141,7 +145,10 @@ class HubitatHubSpider:
   def save_session(self):
     if (self.session != None):
       try:
-        with open('__hubitat_session', 'wb') as f:
+        hubitat_session = '__hubitat_session'
+        if(self.id_name is not None):
+          hubitat_session += '_' + self.id_name
+        with open(hubitat_session, 'wb') as f:
           pickle.dump(self.session, f)
       except FileNotFoundError:
         self.log.error("Couldn't save session to disk!")

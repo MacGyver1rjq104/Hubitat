@@ -110,8 +110,12 @@ def main():
     log.debug('Getting started...')
     #HubitatHubSpider.saveConfig('192.168.1.1', 'username', 'password', 'hhs_sample.cfg')
     hhs = HubitatHubSpider(None, 'hubitat_hubspider.cfg')
+    hhs_2 = HubitatHubSpider(None, 'hhs_10_2.cfg', id_name='id_2')
+    hhs_3 = HubitatHubSpider(None, 'hhs_10_3.cfg', id_name='id_3')
     # Check the result from login()
     log.debug(hhs.login())
+    log.debug(hhs_2.login())
+    log.debug(hhs_3.login())
 
     # Setup the Package Manager objects
     pm = HubitatPackageManagerTool("Markus", "2.1.7", 
@@ -124,7 +128,12 @@ def main():
     # to call by the include tags in the .groovy files when we process them
     cb = HubitatCodeBuilderTasmota(hhs, calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
                 app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
+    cb_3 = HubitatCodeBuilderTasmota(hhs_3, id_name='id_3', calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
+                app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
     cb_private = HubitatCodeBuilderTasmota(hhs, calling_namespace=sys.modules[__name__], app_dir=Path('./private/apps'), 
+                app_build_dir=Path('./private/apps/expanded'), driver_dir=Path('./private/drivers'), 
+                driver_build_dir=Path('./private/drivers/expanded'), default_version='v0.1.1.MMDD')
+    cb_private_3 = HubitatCodeBuilderTasmota(hhs_3, id_name='id_3', calling_namespace=sys.modules[__name__], app_dir=Path('./private/apps'), 
                 app_build_dir=Path('./private/apps/expanded'), driver_dir=Path('./private/drivers'), 
                 driver_build_dir=Path('./private/drivers/expanded'), default_version='v0.1.1.MMDD')
     #cb = HubitatCodeBuilderTasmota()
@@ -284,10 +293,10 @@ def main():
         {'id': 737, 'file': 'tasmota-generic-wifi-dimmer.groovy' },
 
         # Universal drivers
-        {'id': 865, 'file': 'tasmota-universal-parent.groovy', 'specialDebugLabel': 'descriptionText',
+        {'id': 865, 'id_3': 342, 'file': 'tasmota-universal-parent.groovy', 'specialDebugLabel': 'descriptionText',
          'required': True },
         
-        {'id': 866, 'file': 'tasmota-universal-multi-sensor-child.groovy', 
+        {'id': 866, 'id_3': 343, 'file': 'tasmota-universal-multi-sensor-child.groovy', 
             'specialDebugLabel': 'descriptionText' },
         {'id': 993, 'file': 'tasmota-universal-fancontrol-child.groovy', 
             'specialDebugLabel': 'descriptionText' },
@@ -323,12 +332,12 @@ def main():
          'alternate_output_filename': 'tasmota-universal-multi-sensor-testing-child', \
          'alternate_name': 'Tasmota - Universal Multi Sensor Testing (Child)' },
 
-        {'id': 547, 'file': 'testing-bare-minimum-driver.groovy', 'version': 'v0.1.0.MMDD' },
+        {'id': 547, 'id_3': 341, 'file': 'testing-bare-minimum-driver.groovy', 'version': 'v0.1.0.MMDD' },
         {'id': 1057, 'file': 'testing-get-driver-runtime-data.groovy', 'version': 'v0.1.0.MMDD'  },
 
         # Zigbee
         {'id': 579, 'file': 'zigbee-generic-wifi-switch-plug.groovy' },
-        {'id': 801, 'file': 'zigbee-aqara-smart-curtain-motor.groovy', 'version': 'v1.0.0.MMDD' },
+        {'id': 801, 'id_3': 335, 'file': 'zigbee-aqara-smart-curtain-motor.groovy', 'version': 'v1.0.0.MMDD' },
 
         # Virtual
         {'id': 962, 'file': 'javascript-injection-driver.groovy', 'version': 'v0.1.0.MMDDb' },
@@ -419,11 +428,16 @@ def main():
     driver_files_private_active = [
         #{'id': 866},
     ]
+    driver_files_active_3 = [
+        {'id': 801}, {'id': 547},
+        {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
+    ]
     expected_num_drivers = 1
 
     driver_files_active = getExpandedDriverList(driver_files_active, driver_files)
+    driver_files_active_3 = getExpandedDriverList(driver_files_active_3, driver_files)
 
-    driver_files_private_active = getExpandedDriverList(driver_files_private_active, driver_files)
+    #driver_files_private_active = getExpandedDriverList(driver_files_private_active, driver_files)
     #print(driver_files)
 
     # Setting id to 0 will have the Code Builder submit the driver as a new one, don't forget to note the ID 
@@ -436,16 +450,17 @@ def main():
 
     #cb.clearChecksums()
 
-    
-
     generic_drivers = []
     specific_drivers = []
 
     parent_drivers = []
     child_drivers = []
-    
+    print(driver_files_active_3)
+
+    used_driver_list_3 = cb_3.expandGroovyFilesAndPush(driver_files_active_3, code_type='driver')
+
     used_driver_list = cb.expandGroovyFilesAndPush(driver_files_active, code_type='driver')
-    used_driver_list_private = cb_private.expandGroovyFilesAndPush(driver_files_private_active, code_type='driver')
+    #used_driver_list_private = cb_private.expandGroovyFilesAndPush(driver_files_private_active, code_type='driver')
     #print(used_driver_list)
     #print(driver_files_active)
     sorted_driver_list = []
@@ -642,7 +657,7 @@ def main():
     ]
 
     app_files_private = [
-        {'id': 353, 'file': 'custom-lighting.groovy', 'required': True, 'oauth': False },
+        {'id': 353, 'id_3': 67, 'file': 'custom-lighting.groovy', 'required': True, 'oauth': False },
     ]
 
     cb.setUsedDriverList(used_driver_list)
@@ -662,8 +677,12 @@ def main():
         #    else:
         #        log.info("Not ready for App updates! Only " + str(len(used_driver_list)) + " driver(s) currently active! Skipped updating App ID " + str(a['id']))
     #print(filtered_app_files)
+    used_app_list_private_3 = cb_private_3.expandGroovyFilesAndPush(app_files_private.copy(), code_type='app')
+
     used_app_list = cb.expandGroovyFilesAndPush(filtered_app_files.copy(), code_type='app')
     used_app_list_private = cb_private.expandGroovyFilesAndPush(app_files_private.copy(), code_type='app')
+
+    
 
     #print(used_app_list)
     for a in sorted(used_app_list.values(), key=lambda k: k['name']):
@@ -680,16 +699,25 @@ def main():
     else:
         log.info('No new drivers were created!')
     log.info('This many drivers were UPDATED: {}'.format(cb.driver_num_updated))
+
+    if(len(cb_3.driver_new)>0):
+        log.warning('These new drivers were created on 10.3: \n{}'.format(cb_3.driver_new))
+    else:
+        log.info('No new drivers were created on 10.3!')
+
+    log.info('This many drivers were UPDATED on 10.3: {}'.format(cb_3.driver_num_updated))
     if(len(cb_private.driver_new)>0):
         log.warning('These new PRIVATE drivers were created: \n{}'.format(cb_private.driver_new))
     else:
         log.info('No new PRIVATE drivers were created!')
     log.info('This many PRIVATE drivers were UPDATED: {}'.format(cb_private.driver_num_updated))
+
     if(len(cb.app_new)>0):
         log.warn('These new apps were created: \n{}'.format(cb.app_new))
     else:
         log.info('No new apps were created!')
     log.info('This many apps were UPDATED: {}'.format(cb.app_num_updated))
+
     if(len(cb_private.app_new)>0):
         log.warn('These new PRIVATE apps were created: \n{}'.format(cb_private.app_new))
     else:
@@ -721,8 +749,12 @@ def main():
     #cb.hubitat_hubspider.get_app_list()
 
     cb.saveChecksums()
+    #cb_2.saveChecksums()
+    cb_3.saveChecksums()
     cb_private.saveChecksums(checksum_file='./private/__hubitat_checksums')
     hhs.save_session()
+    #hhs_2.save_session()
+    hhs_3.save_session()
 
 if(Path('DEVELOPER').exists()):
     main()

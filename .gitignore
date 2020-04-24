@@ -9,3 +9,7 @@ hubitat_hubspider.cfg
 /private
 /_tmpdhcp*
 /.vscode/.ropeproject
+/hhs_10_2.cfg
+/hhs_10_3.cfg
+/__hubitat_session_id_3
+/__hubitat_checksums_id_3
