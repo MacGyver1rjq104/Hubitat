@@ -770,7 +770,7 @@ String getDefaultCSS(boolean includeTags=true) {
 private boolean logging(message, level) {
     boolean didLogging = false
     Integer logLevelLocal = (logLevel != null ? logLevel.toInteger() : 0)
-    if(!isDeveloperHub()) {
+    //if(!isDeveloperHub()) {
         logLevelLocal = 0
         if (infoLogging == true) {
             logLevelLocal = 100
@@ -778,8 +778,8 @@ private boolean logging(message, level) {
         if (debugLogging == true) {
             logLevelLocal = 1
         }
-    }
-    if (logLevelLocal != "0"){
+    //}
+    if (logLevelLocal != 0){
         switch (logLevelLocal) {
         case -1: // Insanely verbose
             if (level >= 0 && level < 100) {
