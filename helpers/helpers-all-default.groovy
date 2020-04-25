@@ -1,4 +1,5 @@
-#!include:getHelperFunctions('all-debug')
+// Don't need this include anymore:
+//#include:getHelperFunctions('all-debug')
 
 /**
  * ALL DEFAULT METHODS (helpers-all-default)
@@ -128,61 +129,6 @@ private def getFilteredDeviceDriverName() {
 private def getFilteredDeviceDisplayName() {
     def deviceDisplayName = device.displayName.replace(' (parent)', '').replace(' (Parent)', '')
     return deviceDisplayName
-}
-
-def generate_preferences(configuration_model) {
-    def configuration = new XmlSlurper().parseText(configuration_model)
-   
-    configuration.Value.each {
-        if(it.@hidden != "true" && it.@disabled != "true") {
-            switch(it.@type) {   
-                case "number":
-                    input("${it.@index}", "number",
-                        title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                        description: makeTextItalic(it.@description),
-                        range: "${it.@min}..${it.@max}",
-                        defaultValue: "${it.@value}",
-                        submitOnChange: it.@submitOnChange == "true",
-                        displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "list":
-                    def items = []
-                    it.Item.each { items << ["${it.@value}":"${it.@label}"] }
-                    input("${it.@index}", "enum",
-                        title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                        description: makeTextItalic(it.@description),
-                        defaultValue: "${it.@value}",
-                        submitOnChange: it.@submitOnChange == "true",
-                        displayDuringSetup: "${it.@displayDuringSetup}",
-                        options: items)
-                    break
-                case "password":
-                    input("${it.@index}", "password",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "decimal":
-                    input("${it.@index}", "decimal",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            range: "${it.@min}..${it.@max}",
-                            defaultValue: "${it.@value}",
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "bool":
-                    input("${it.@index}", "bool",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            defaultValue: "${it.@value}",
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-            }
-        }
-    }
 }
 
 /*

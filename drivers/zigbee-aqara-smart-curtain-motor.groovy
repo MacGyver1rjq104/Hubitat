@@ -49,7 +49,7 @@ metadata {
 	}
 
     preferences {
-        #!include:getDefaultMetadataPreferences()
+        #!include:getDefaultMetadataPreferences(includeCSS=False)
 	}
 }
 

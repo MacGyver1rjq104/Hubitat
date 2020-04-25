@@ -459,6 +459,7 @@ def main():
 
     used_driver_list_3 = cb_3.expandGroovyFilesAndPush(driver_files_active_3, code_type='driver')
 
+    # The main target needs to be last to keep everything in a consistent state
     used_driver_list = cb.expandGroovyFilesAndPush(driver_files_active, code_type='driver')
     #used_driver_list_private = cb_private.expandGroovyFilesAndPush(driver_files_private_active, code_type='driver')
     #print(used_driver_list)
@@ -678,7 +679,8 @@ def main():
         #        log.info("Not ready for App updates! Only " + str(len(used_driver_list)) + " driver(s) currently active! Skipped updating App ID " + str(a['id']))
     #print(filtered_app_files)
     used_app_list_private_3 = cb_private_3.expandGroovyFilesAndPush(app_files_private.copy(), code_type='app')
-
+    
+    # The main target needs to be last to keep everything in a consistent state
     used_app_list = cb.expandGroovyFilesAndPush(filtered_app_files.copy(), code_type='app')
     used_app_list_private = cb_private.expandGroovyFilesAndPush(app_files_private.copy(), code_type='app')
 

@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0422Tb
+ *  Version: v1.0.1.0425Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -72,7 +72,8 @@ metadata {
         // BEGIN:getDefaultParentMetadataPreferences()
         // Default Parent Preferences
         input(name: "runReset", description: addDescriptionDiv("For details and guidance, see the release thread in the <a href=\"https://community.hubitat.com/t/release-tasmota-7-x-firmware-with-hubitat-support/29368\"> Hubitat Forum</a>. For settings marked as ADVANCED, make sure you understand what they do before activating them. If settings are not reflected on the device, press the Configure button in this driver. Also make sure all settings really are saved and correct."), title: addTitleDiv("Settings"), displayDuringSetup: false, type: "paragraph", element: "paragraph")
-        generate_preferences(configuration_model_debug())
+        input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultParentMetadataPreferences()
         input(name: "deviceConfig", type: "enum", title: addTitleDiv("Device Configuration"), 
             description: addDescriptionDiv("Select a Device Configuration (default: Generic Device)<br/>'Generic Device' doesn't configure device Template and/or Module on Tasmota. Child devices and types are auto-detected as well as auto-created and does NOT depend on this setting."), 
@@ -87,7 +88,7 @@ metadata {
 
         // BEGIN:getDefaultMetadataPreferencesForTasmota(True) # False = No TelePeriod setting
         // Default Preferences for Tasmota
-        generate_preferences(configuration_model_tasmota())
+        input("password", "password", title: addTitleDiv("Device Password"), description: addDescriptionDiv("REQUIRED if set on the Device! Otherwise leave empty."))
         input(name: "ipAddress", type: "string", title: addTitleDiv("Device IP Address"), description: addDescriptionDiv("Set this as a default fallback for the auto-discovery feature."), displayDuringSetup: true, required: false)
         input(name: "port", type: "number", title: addTitleDiv("Device Port"), description: addDescriptionDiv("The http Port of the Device (default: 80)"), displayDuringSetup: true, required: false, defaultValue: 80)
         input(name: "override", type: "bool", title: addTitleDiv("Override IP"), description: addDescriptionDiv("Override the automatically discovered IP address and disable auto-discovery."), displayDuringSetup: true, required: false)
@@ -1655,7 +1656,7 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 private String getDriverVersion() {
     //comment = ""
     //if(comment != "") state.comment = comment
-    String version = "v1.0.1.0422Tb"
+    String version = "v1.0.1.0425Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -1746,57 +1747,8 @@ private boolean logging(message, level) {
 // END:  getLoggingFunction(specialDebugLevel=True)
 
 
-/**
- * ALL DEBUG METHODS (helpers-all-debug)
- *
- * Helper Debug functions included in all drivers/apps
- */
-String configuration_model_debug() {
-    if(!isDeveloperHub()) {
-        if(!isDriver()) {
-            app.removeSetting("logLevel")
-            app.updateSetting("logLevel", "0")
-        }
-        return '''
-<configuration>
-<Value type="bool" index="debugLogging" label="Enable debug logging" description="" value="false" submitOnChange="true" setting_type="preference" fw="">
-<Help></Help>
-</Value>
-<Value type="bool" index="infoLogging" label="Enable descriptionText logging" description="" value="true" submitOnChange="true" setting_type="preference" fw="">
-<Help></Help>
-</Value>
-</configuration>
-'''
-    } else {
-        if(!isDriver()) {
-            app.removeSetting("debugLogging")
-            app.updateSetting("debugLogging", "false")
-            app.removeSetting("infoLogging")
-            app.updateSetting("infoLogging", "false")
-        }
-        return '''
-<configuration>
-<Value type="list" index="logLevel" label="Debug Log Level" description="Under normal operations, set this to None. Only needed for debugging. Auto-disabled after 30 minutes." value="100" submitOnChange="true" setting_type="preference" fw="">
-<Help>
-</Help>
-    <Item label="None" value="0" />
-    <Item label="Insanely Verbose" value="-1" />
-    <Item label="Very Verbose" value="1" />
-    <Item label="Verbose" value="10" />
-    <Item label="Reports+Status" value="50" />
-    <Item label="Reports" value="99" />
-    // BEGIN:getSpecialDebugEntry()
-    <Item label="descriptionText" value="100" />
-    // END:  getSpecialDebugEntry()
-</Value>
-</configuration>
-'''
-    }
-}
-
-/**
- *   --END-- ALL DEBUG METHODS (helpers-all-debug)
- */
+// Don't need this include anymore:
+//#include:getHelperFunctions('all-debug')
 
 /**
  * ALL DEFAULT METHODS (helpers-all-default)
@@ -1926,61 +1878,6 @@ private def getFilteredDeviceDriverName() {
 private def getFilteredDeviceDisplayName() {
     def deviceDisplayName = device.displayName.replace(' (parent)', '').replace(' (Parent)', '')
     return deviceDisplayName
-}
-
-def generate_preferences(configuration_model) {
-    def configuration = new XmlSlurper().parseText(configuration_model)
-   
-    configuration.Value.each {
-        if(it.@hidden != "true" && it.@disabled != "true") {
-            switch(it.@type) {   
-                case "number":
-                    input("${it.@index}", "number",
-                        title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                        description: makeTextItalic(it.@description),
-                        range: "${it.@min}..${it.@max}",
-                        defaultValue: "${it.@value}",
-                        submitOnChange: it.@submitOnChange == "true",
-                        displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "list":
-                    def items = []
-                    it.Item.each { items << ["${it.@value}":"${it.@label}"] }
-                    input("${it.@index}", "enum",
-                        title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                        description: makeTextItalic(it.@description),
-                        defaultValue: "${it.@value}",
-                        submitOnChange: it.@submitOnChange == "true",
-                        displayDuringSetup: "${it.@displayDuringSetup}",
-                        options: items)
-                    break
-                case "password":
-                    input("${it.@index}", "password",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "decimal":
-                    input("${it.@index}", "decimal",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            range: "${it.@min}..${it.@max}",
-                            defaultValue: "${it.@value}",
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-                case "bool":
-                    input("${it.@index}", "bool",
-                            title:"${addTitleDiv(it.@label)}" + "${it.Help}",
-                            description: makeTextItalic(it.@description),
-                            defaultValue: "${it.@value}",
-                            submitOnChange: it.@submitOnChange == "true",
-                            displayDuringSetup: "${it.@displayDuringSetup}")
-                    break
-            }
-        }
-    }
 }
 
 /*
@@ -2445,6 +2342,37 @@ String makeTextItalic(s) {
         return "<i>$s</i>"
     } else {
         return "$s"
+    }
+}
+
+String getDefaultCSS(boolean includeTags=true) {
+    String defaultCSS = '''
+    /* This is part of the CSS for replacing a Command Title */
+    div.mdl-card__title div.mdl-grid div.mdl-grid .mdl-cell p::after {
+        visibility: visible;
+        position: absolute;
+        left: 50%;
+        transform: translate(-50%, 0%);
+        width: calc(100% - 20px);
+        padding-left: 5px;
+        padding-right: 5px;
+        margin-top: 0px;
+    }
+    /* This is general CSS Styling for the Driver page */
+    h3, h4, .property-label {
+        font-weight: bold;
+    }
+    .preference-title {
+        font-weight: bold;
+    }
+    .preference-description {
+        font-style: italic;
+    }
+    '''
+    if(includeTags == true) {
+        return "<style>$defaultCSS </style>"
+    } else {
+        return defaultCSS
     }
 }
 
@@ -3390,20 +3318,6 @@ Integer dBmToQuality(Integer dBm) {
     }
     logging("DBM: $dBm (${quality}%)", 0)*/
     return dBm
-}
-
-/*
-    Tasmota Preferences Related
-*/
-String configuration_model_tasmota() {
-'''
-<configuration>
-<Value type="password" byteSize="1" index="password" label="Device Password" description="REQUIRED if set on the Device! Otherwise leave empty." min="" max="" value="" setting_type="preference" fw="">
-<Help>
-</Help>
-</Value>
-</configuration>
-'''
 }
 
 /*

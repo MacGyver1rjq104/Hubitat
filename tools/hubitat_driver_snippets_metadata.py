@@ -162,19 +162,27 @@ if(isCSSDisabled() == false) {
 }
 """
 
-def getDefaultParentMetadataPreferences():
+def getDefaultParentMetadataPreferences(includeCSS=False):
     #input(description: "Once you change values on this page, the corner of the 'configuration' icon will change to orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph")
+    includedCSS = ""
+    if(includeCSS):
+        includedCSS = " + getDefaultCSS()"
     return """
 // Default Parent Preferences
 input(name: "runReset", description: addDescriptionDiv("For details and guidance, see the release thread in the <a href=\\\"https://community.hubitat.com/t/release-tasmota-7-x-firmware-with-hubitat-support/29368\\\"> Hubitat Forum</a>. For settings marked as ADVANCED, make sure you understand what they do before activating them. If settings are not reflected on the device, press the Configure button in this driver. Also make sure all settings really are saved and correct."), title: addTitleDiv("Settings"), displayDuringSetup: false, type: "paragraph", element: "paragraph")
-generate_preferences(configuration_model_debug())
+input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
-def getDefaultMetadataPreferences():
+def getDefaultMetadataPreferences(includeCSS=False):
     #input(description: "Once you change values on this page, the corner of the 'configuration' icon will change to orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph")
+    includedCSS = ""
+    if(includeCSS):
+        includedCSS = " + getDefaultCSS()"
     return """
 // Default Preferences
-generate_preferences(configuration_model_debug())
+input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
 def getDefaultMetadataPreferencesLast():
@@ -195,7 +203,7 @@ input(name: "hideAdvanced", type: "bool", title: addTitleDiv("Hide Advanced Sett
 def getDefaultMetadataPreferencesForTasmota(includeTelePeriod=True):
     return """
 // Default Preferences for Tasmota
-generate_preferences(configuration_model_tasmota())
+input("password", "password", title: addTitleDiv("Device Password"), description: addDescriptionDiv("REQUIRED if set on the Device! Otherwise leave empty."))
 input(name: "ipAddress", type: "string", title: addTitleDiv("Device IP Address"), description: addDescriptionDiv("Set this as a default fallback for the auto-discovery feature."), displayDuringSetup: true, required: false)
 input(name: "port", type: "number", title: addTitleDiv("Device Port"), description: addDescriptionDiv("The http Port of the Device (default: 80)"), displayDuringSetup: true, required: false, defaultValue: 80)
 input(name: "override", type: "bool", title: addTitleDiv("Override IP"), description: addDescriptionDiv("Override the automatically discovered IP address and disable auto-discovery."), displayDuringSetup: true, required: false)

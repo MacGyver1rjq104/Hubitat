@@ -88,8 +88,7 @@ Map mainPage() {
         if (state.appInstalled == 'COMPLETE') {
             section(getElementStyle('header', getMaterialIcon('settings_applications') + "Configure App"), hideable: true, hidden: false){
                 getElementStyle('separator')
-                //input(name: "sendToAWSwitch", type: "bool", defaultValue: "false", title: "Use App Watchdog to track this apps version info?", description: "Update App Watchdog", submitOnChange: "true")}
-                generate_preferences(configuration_model_debug())
+                #!include:getDefaultMetadataPreferences()
                 input("passwordDefault", "password", title:"Default Tasmota Password", submitOnChange: true, displayDuringSetup: true)
             
             //input(name: "pushAll", type: "bool", defaultValue: "false", submitOnChange: true, title: "Only send Push if there is something to actually report", description: "Push All")

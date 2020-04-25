@@ -753,20 +753,6 @@ Integer dBmToQuality(Integer dBm) {
 }
 
 /*
-    Tasmota Preferences Related
-*/
-String configuration_model_tasmota() {
-'''
-<configuration>
-<Value type="password" byteSize="1" index="password" label="Device Password" description="REQUIRED if set on the Device! Otherwise leave empty." min="" max="" value="" setting_type="preference" fw="">
-<Help>
-</Help>
-</Value>
-</configuration>
-'''
-}
-
-/*
     HTTP Tasmota API Related
 */
 private void httpGetAction(String uri, callback="parse") { 
