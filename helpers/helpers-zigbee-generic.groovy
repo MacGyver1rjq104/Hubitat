@@ -1,0 +1,92 @@
+/**
+ * ZIGBEE GENERIC METHODS (helpers-zigbee-generic)
+ *
+ * Helper functions included in all Zigbee drivers
+ */
+
+/* --------- STATIC DEFINES --------- */
+private getCLUSTER_BASIC() { 0x0000 }
+private getCLUSTER_POWER() { 0x0001 }
+private getCLUSTER_WINDOW_COVERING() { 0x0102 }
+private getCLUSTER_WINDOW_POSITION() { 0x000d }
+private getCLUSTER_ON_OFF() { 0x0006 }
+private getBASIC_ATTR_POWER_SOURCE() { 0x0007 }
+private getPOWER_ATTR_BATTERY_PERCENTAGE_REMAINING() { 0x0021 }
+private getPOSITION_ATTR_VALUE() { 0x0055 }
+private getCOMMAND_OPEN() { 0x00 }
+private getCOMMAND_CLOSE() { 0x01 }
+private getCOMMAND_PAUSE() { 0x02 }
+private getENCODING_SIZE() { 0x39 }
+
+
+/* --------- GENERIC METHODS --------- */
+ArrayList<String> zigbeeWriteLongAttribute(Integer cluster, Integer attributeId, Integer dataType, Long value, Map additionalParams = [:], int delay = 2000) {
+    logging("zigbeeWriteLongAttribute()", 1)
+    String mfgCode = ""
+    if(additionalParams.containsKey("mfgCode")) {
+        mfgCode = " {${HexUtils.integerToHexString(HexUtils.hexStringToInt(additionalParams.get("mfgCode")), 2)}}"
+    }
+    String wattrArgs = "0x${device.deviceNetworkId} 0x01 0x${HexUtils.integerToHexString(cluster, 2)} " + 
+                       "0x${HexUtils.integerToHexString(attributeId, 2)} " + 
+                       "0x${HexUtils.integerToHexString(dataType, 1)} " + 
+                       "{${Long.toHexString(value)}}" + 
+                       "$mfgCode"
+    ArrayList<String> cmd = ["he wattr $wattrArgs", "delay $delay"]
+    
+    logging("zigbeeWriteLongAttribute cmd=$cmd", 1)
+    return cmd
+}
+
+void sendZigbeeCommand(String cmd) {
+    logging("sendZigbeeCommand(cmd=$cmd)", 1)
+    sendZigbeeCommands([cmd])
+}
+
+void sendZigbeeCommands(ArrayList<String> cmd) {
+    logging("sendZigbeeCommands(cmd=$cmd)", 1)
+    hubitat.device.HubMultiAction allActions = new hubitat.device.HubMultiAction()
+    cmd.each {
+        if(it.startsWith('delay')) {
+            allActions.add(new hubitat.device.HubAction(it))
+        } else {
+            allActions.add(new hubitat.device.HubAction(it, hubitat.device.Protocol.ZIGBEE))
+        }
+    }
+    sendHubCommand(allActions)
+}
+
+String setCleanModelName(String newModelToSet=null) {
+    // Clean the model name
+    String model = newModelToSet != null ? newModelToSet : getDeviceDataByName('model')
+    String newModel = model.replaceAll("[^A-Za-z0-9.\\-_]", "")
+    logging("dirty model = $model, cleaned model=$newModel", 1)
+    updateDataValue('model', newModel)
+    return newModel
+}
+
+void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
+    if (lastCheckinEnable == true) {
+        if(device.currentValue('lastCheckin') == null || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
+		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+            logging("Updated lastCheckin", 1)
+        } else {
+            logging("Not updating lastCheckin since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+        }
+	}
+    if (lastCheckinEpochEnable == true) {
+		if(device.currentValue('lastCheckinEpoch') == null || now() >= device.currentValue('lastCheckinEpoch').toLong() + (minimumMinutesToRepeat * 60 * 1000)) {
+		    sendEvent(name: "lastCheckinEpoch", value: now())
+            logging("Updated lastCheckinEpoch", 1)
+        } else {
+            logging("Not updating lastCheckinEpoch since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+        }
+	}
+}
+
+void resetBatteryReplacedDate() {
+    sendEvent(name: "batteryLastReplaced", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+}
+
+ /**
+ * --END-- ZIGBEE GENERIC METHODS (helpers-zigbee-generic)
+ */

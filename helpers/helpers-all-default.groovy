@@ -154,6 +154,17 @@ Integer extractInt(String input) {
   return input.replaceAll("[^0-9]", "").toInteger()
 }
 
+String hexToASCII(String hexValue) {
+    StringBuilder output = new StringBuilder("")
+    for (int i = 0; i < hexValue.length(); i += 2) {
+        String str = hexValue.substring(i, i + 2)
+        output.append((char) Integer.parseInt(str, 16) + 30)
+        logging("${Integer.parseInt(str, 16)}", 10)
+    }
+    logging("hexToASCII: ${output.toString()}", 0)
+    return output.toString()
+}
+
 /**
  * --END-- ALL DEFAULT METHODS (helpers-all-default)
  */

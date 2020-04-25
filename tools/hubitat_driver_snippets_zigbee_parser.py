@@ -14,17 +14,17 @@
 """
   Snippets used by hubitat-driver-helper-tool
 """
-def getGenericZigbeeParseHeader():
+def getGenericZigbeeParseHeader(loglevel=1):
     return """// parse() Generic Zigbee-device header BEGINS here
 logging("PARSE START---------------------", 1)
 logging("Parsing: ${description}", 0)
-def cmds = []
+ArrayList<String> cmd = []
 def msgMap = zigbee.parseDescriptionAsMap(description)
-logging("msgMap: ${msgMap}", 1)
+logging("msgMap: ${msgMap}", """ + str(loglevel) + """)
 // parse() Generic header ENDS here"""
 
 def getGenericZigbeeParseFooter():
     return """// parse() Generic Zigbee-device footer BEGINS here
 logging("PARSE END-----------------------", 1)
-return cmds
+return cmd
 // parse() Generic footer ENDS here"""

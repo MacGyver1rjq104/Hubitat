@@ -55,6 +55,19 @@ def getDefaultMetadataAttributes():
 attribute   "driver", "string"
 """
 
+def getDefaultZigbeeMetadataAttributes():
+    return """
+// Default Zigbee Device Attributes
+attribute "lastCheckin", "Date"
+attribute "lastCheckinEpoch", "String"
+"""
+
+def getZigbeeBatteryMetadataAttributes():
+    return """
+// Default Zigbee Battery Device Attributes
+attribute "batteryLastReplaced", "String"
+"""
+
 def getDefaultMetadataAttributesForEnergyMonitor():
     return """
 // Default Attributes for Energy Monitor
@@ -150,6 +163,12 @@ command("actionSave")
 command("actionPauseUnpauseLearning")
 """
 
+def getZigbeeBatteryCommands():
+    return """
+// Commands used for Battery
+command "resetBatteryReplacedDate"
+"""
+
 def getMetadataCustomizationMethods():
     #input(description: "Once you change values on this page, the corner of the 'configuration' icon will change to orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph")
     return """
@@ -174,13 +193,18 @@ input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug loggi
 input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
-def getDefaultMetadataPreferences(includeCSS=False):
+def getDefaultMetadataPreferences(includeCSS=False, includeRunReset=False):
     #input(description: "Once you change values on this page, the corner of the 'configuration' icon will change to orange until all configuration parameters are updated.", title: "Settings", displayDuringSetup: false, type: "paragraph", element: "paragraph")
     includedCSS = ""
     if(includeCSS):
         includedCSS = " + getDefaultCSS()"
+    includedRunReset = ""
+    if(includeRunReset):
+        includedRunReset = """
+input(name: "runReset", description: addDescriptionDiv("DISABLE BEFORE RELEASE"), title: addTitleDiv("DISABLE BEFORE RELEASE"))
+"""
     return """
-// Default Preferences
+// Default Preferences""" + includedRunReset + """
 input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 """
@@ -230,6 +254,13 @@ def getDefaultMetadataPreferencesForParentDevices(numSwitches=1):
     return '''
 // Default Preferences for Parent Devices
 input(name: "numSwitches", type: "enum", title: addTitleDiv("Number of Relays"), description: addDescriptionDiv("Set the number of buttons/relays on the device (default ''' + str(numSwitches) + ''')"), options: ["1", "2", "3", "4", "5", "6"], defaultValue: "''' + str(numSwitches) + '''", displayDuringSetup: true, required: true)
+'''
+
+def getDefaultMetadataPreferencesForZigbeeDevices():
+    return '''
+// Default Preferences for Zigbee Devices
+input(name: "lastCheckinEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Date"), description: addDescriptionDiv("Records Date events if enabled"), defaultValue: true)
+input(name: "lastCheckinEpochEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Epoch"), description: addDescriptionDiv("Records Epoch events if enabled"), defaultValue: false)
 '''
 
 def getDefaultMetadataPreferencesForParentDevicesWithUnlimitedChildren(numSwitches=1):

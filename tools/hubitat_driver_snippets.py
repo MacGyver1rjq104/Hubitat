@@ -315,8 +315,8 @@ def getDefaultFunctions(comment="", driverVersionSpecial=None):
     driverVersionActual = getDriverVersion(driverVersionSpecial)
     return '''/* Default Driver Methods go here */
 private String getDriverVersion() {
-    //comment = "''' + comment + '''"
-    //if(comment != "") state.comment = comment
+    comment = "''' + comment + '''"
+    if(comment != "") state.comment = comment
     String version = "''' + driverVersionActual + '''"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
