@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0425Tb
+ *  Version: v1.0.1.0426Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ metadata {
         // Default Parent Preferences
         input(name: "runReset", description: addDescriptionDiv("For details and guidance, see the release thread in the <a href=\"https://community.hubitat.com/t/release-tasmota-7-x-firmware-with-hubitat-support/29368\"> Hubitat Forum</a>. For settings marked as ADVANCED, make sure you understand what they do before activating them. If settings are not reflected on the device, press the Configure button in this driver. Also make sure all settings really are saved and correct."), title: addTitleDiv("Settings"), displayDuringSetup: false, type: "paragraph", element: "paragraph")
         input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
-        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultParentMetadataPreferences()
         input(name: "deviceConfig", type: "enum", title: addTitleDiv("Device Configuration"), 
             description: addDescriptionDiv("Select a Device Configuration (default: Generic Device)<br/>'Generic Device' doesn't configure device Template and/or Module on Tasmota. Child devices and types are auto-detected as well as auto-created and does NOT depend on this setting."), 
@@ -1654,9 +1654,9 @@ void componentSetEffectWidth(cd, BigDecimal pixels) {
 // BEGIN:getDefaultFunctions()
 /* Default Driver Methods go here */
 private String getDriverVersion() {
-    //comment = ""
-    //if(comment != "") state.comment = comment
-    String version = "v1.0.1.0425Tb"
+    comment = ""
+    if(comment != "") state.comment = comment
+    String version = "v1.0.1.0426Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -1901,6 +1901,17 @@ String generateMD5(String s) {
 
 Integer extractInt(String input) {
   return input.replaceAll("[^0-9]", "").toInteger()
+}
+
+String hexToASCII(String hexValue) {
+    StringBuilder output = new StringBuilder("")
+    for (int i = 0; i < hexValue.length(); i += 2) {
+        String str = hexValue.substring(i, i + 2)
+        output.append((char) Integer.parseInt(str, 16) + 30)
+        logging("${Integer.parseInt(str, 16)}", 10)
+    }
+    logging("hexToASCII: ${output.toString()}", 0)
+    return output.toString()
 }
 
 /**
@@ -2415,15 +2426,18 @@ void installed() {
 }
 
 // Call order: installed() -> configure() -> updated() -> initialize() -> refresh()
-void configure() {
+def configure() {
     logging("configure()", 100)
     if(isDriver()) {
         // Do NOT call updateNeededSettings() here!
-        updated()
+        try {
+            return configureAdditional()
+        } catch (MissingMethodException e) {
+            updated()
+        }
         try {
             // Run the getDriverVersion() command
-            def newCmds = getDriverVersion()
-            if (newCmds != null && newCmds != []) cmds = cmds + newCmds
+            getDriverVersion()
         } catch (MissingMethodException e) {
             // ignore
         }

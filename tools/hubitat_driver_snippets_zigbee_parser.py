@@ -14,17 +14,25 @@
 """
   Snippets used by hubitat-driver-helper-tool
 """
-def getGenericZigbeeParseHeader(loglevel=1):
+def getGenericZigbeeParseHeader(loglevel=0):
     return """// parse() Generic Zigbee-device header BEGINS here
-logging("PARSE START---------------------", 1)
-logging("Parsing: ${description}", 0)
+logging("PARSE START---------------------", """ + str(loglevel) + """)
+logging("Parsing: '${description}'", """ + str(loglevel) + """)
 ArrayList<String> cmd = []
-def msgMap = zigbee.parseDescriptionAsMap(description)
-logging("msgMap: ${msgMap}", """ + str(loglevel) + """)
+boolean hasStruct = false
+Map msgMap = null
+if(description.indexOf('encoding: 4C') >= 0) {
+  // Parsing of STRUCT (4C) is broken in HE, for now we need a workaround
+  msgMap = zigbee.parseDescriptionAsMap(description.replace('encoding: 4C', 'encoding: F2'))
+  hasStruct = true
+} else {
+  msgMap = zigbee.parseDescriptionAsMap(description)
+}
+logging("msgMap: ${msgMap} (hasStruct=$hasStruct)", """ + str(loglevel) + """)
 // parse() Generic header ENDS here"""
 
-def getGenericZigbeeParseFooter():
+def getGenericZigbeeParseFooter(loglevel=0):
     return """// parse() Generic Zigbee-device footer BEGINS here
-logging("PARSE END-----------------------", 1)
+logging("PARSE END-----------------------", """ + str(loglevel) + """)
 return cmd
 // parse() Generic footer ENDS here"""

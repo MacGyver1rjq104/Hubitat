@@ -70,7 +70,7 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
         } else {
-            logging("Not updating lastCheckin since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+            logging("Not updating lastCheckin since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 0)
         }
 	}
     if (lastCheckinEpochEnable == true) {
@@ -78,13 +78,45 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 		    sendEvent(name: "lastCheckinEpoch", value: now())
             logging("Updated lastCheckinEpoch", 1)
         } else {
-            logging("Not updating lastCheckinEpoch since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+            logging("Not updating lastCheckinEpoch since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 0)
         }
 	}
 }
 
+void checkPresence() {
+    Long lastCheckinTime = null
+    if (lastCheckinEnable == true && device.currentValue('lastCheckin') != null) {
+        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
+    } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
+        lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
+    }
+    if(lastCheckinTime != null && lastCheckinTime >= now() - (3 * 60 * 60 * 1000)) {
+        // There was an event within the last 3 hours, all is well
+        sendEvent(name: "presence", value: "present")
+    } else {
+        sendEvent(name: "presence", value: "not present")
+    }
+}
+
 void resetBatteryReplacedDate() {
     sendEvent(name: "batteryLastReplaced", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+}
+
+void parseAndSendBatteryStatus(BigDecimal vCurrent) {
+    BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
+    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMinSetting
+
+    BigDecimal bat = 0
+    if(vMax - vMin > 0) {
+        bat = ((vCurrent - vMin) / (vMax - vMin)) * 100.0
+    } else {
+        bat = 100
+    }
+    bat = bat.setScale(1, BigDecimal.ROUND_HALF_UP)
+    bat = bat > 100 ? 100 : bat
+
+    logging("Battery event: $bat% (V = $vCurrent)", 1)
+    sendEvent(name:"battery", value: bat, unit: "%", isStateChange: false)
 }
 
  /**

@@ -33,15 +33,18 @@ void installed() {
 }
 
 // Call order: installed() -> configure() -> updated() -> initialize() -> refresh()
-void configure() {
+def configure() {
     logging("configure()", 100)
     if(isDriver()) {
         // Do NOT call updateNeededSettings() here!
-        updated()
+        try {
+            return configureAdditional()
+        } catch (MissingMethodException e) {
+            updated()
+        }
         try {
             // Run the getDriverVersion() command
-            def newCmds = getDriverVersion()
-            if (newCmds != null && newCmds != []) cmds = cmds + newCmds
+            getDriverVersion()
         } catch (MissingMethodException e) {
             // ignore
         }

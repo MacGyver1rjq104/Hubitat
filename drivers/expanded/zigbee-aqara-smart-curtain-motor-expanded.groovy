@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0425
+ *  Version: v1.0.1.0427
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -63,10 +63,11 @@ metadata {
         command "curtainReverseDirection"
         command "trackDiscoveryMode"
 
-        // Uncomment for TESTING, not needed normally:
+        // Uncomment these Commands for TESTING, not needed normally:
         //command "getBattery"    // comment before release!
         //command "installed"     // just used for testing that Installed runs properly, comment before release!
         //command "sendAttribute", [[name:"Attribute*", type: "STRING", description: "Zigbee Attribute"]]
+        //command "parse", [[name:"Description*", type: "STRING", description: "description"]]
 
         // Aqara Smart Curtain Motor (ZNCLDJ11LM)
         fingerprint profileId: "0104", inClusters: "0000,0004,0003,0005,000A,0102,000D,0013,0006,0001,0406", outClusters: "0019,000A,000D,0102,0013,0006,0001,0406", manufacturer: "LUMI", model: "lumi.curtain"
@@ -79,12 +80,13 @@ metadata {
         // BEGIN:getDefaultMetadataPreferences(includeCSS=True)
         // Default Preferences
         input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: ""  + getDefaultCSS(), defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
-        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultMetadataPreferences(includeCSS=True)
         // BEGIN:getDefaultMetadataPreferencesForZigbeeDevices()
         // Default Preferences for Zigbee Devices
         input(name: "lastCheckinEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Date"), description: addDescriptionDiv("Records Date events if enabled"), defaultValue: true)
         input(name: "lastCheckinEpochEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Epoch"), description: addDescriptionDiv("Records Epoch events if enabled"), defaultValue: false)
+        input(name: "presenceEnable", type: "bool", title: addTitleDiv("Enable Presence"), description: addDescriptionDiv("Enables Presence to indicate if the device has sent data within the last 3 hours (REQUIRES at least one of the Checkin options to be enabled)"), defaultValue: true)
         // END:  getDefaultMetadataPreferencesForZigbeeDevices()
 	}
 }
@@ -144,32 +146,46 @@ void makeSchedule() {
     logging("makeSchedule()", 100)
     // https://www.freeformatter.com/cron-expression-generator-quartz.html
     if(getDeviceDataByName('model') != "lumi.curtain") {
-        schedule("16 3 2/12 * * ? *", 'getBattery')
+        Random rnd = new Random()
+        schedule("${rnd.nextInt(59)} ${rnd.nextInt(59)} 5/12 * * ? *", 'getBattery')
     } else {
         unschedule('getBattery')
     }
 }
 
-ArrayList<String> parse(description) {
-    //log.debug "in parse"
-    // BEGIN:getGenericZigbeeParseHeader()
+ArrayList<String> parse(String description) {
+    // BEGIN:getGenericZigbeeParseHeader(loglevel=0)
     // parse() Generic Zigbee-device header BEGINS here
-    logging("PARSE START---------------------", 1)
-    logging("Parsing: ${description}", 0)
+    logging("PARSE START---------------------", 0)
+    logging("Parsing: '${description}'", 0)
     ArrayList<String> cmd = []
-    def msgMap = zigbee.parseDescriptionAsMap(description)
-    logging("msgMap: ${msgMap}", 1)
+    boolean hasStruct = false
+    Map msgMap = null
+    if(description.indexOf('encoding: 4C') >= 0) {
+      // Parsing of STRUCT (4C) is broken in HE, for now we need a workaround
+      msgMap = zigbee.parseDescriptionAsMap(description.replace('encoding: 4C', 'encoding: F2'))
+      hasStruct = true
+    } else {
+      msgMap = zigbee.parseDescriptionAsMap(description)
+    }
+    logging("msgMap: ${msgMap} (hasStruct=$hasStruct)", 0)
     // parse() Generic header ENDS here
-    // END:  getGenericZigbeeParseHeader()
-    if (msgMap["profileId"] == "0104" && msgMap["clusterId"] == "000A") {
+    // END:  getGenericZigbeeParseHeader(loglevel=0)
+    //logging("msgMap: ${msgMap}", 1)
+
+    if(msgMap["profileId"] == "0104" && msgMap["clusterId"] == "000A") {
 		logging("Xiaomi Curtain Present Event", 1)
         sendlastCheckinEvent(minimumMinutesToRepeat=60)
-	} else if (msgMap["profileId"] == "0104") {
+	} else if(msgMap["profileId"] == "0104") {
+        // TODO: Check if this is just a remnant and that we don't just catch this in the clause above?
         // This is probably just a heartbeat event...
         logging("Unhandled KNOWN 0104 event (heartbeat?)- description:${description} | parseMap:${msgMap}", 0)
         logging("RAW: ${msgMap["attrId"]}", 0)
-        // catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, parseMap:[raw:catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:63A1, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
-    } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0404") {
+        // Heartbeat event Description:
+        // catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000
+    
+        // parseMap:[raw:catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:63A1, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
+    } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0404") {
         if(msgMap["command"] == "0A") {
             if(msgMap["value"] == "00" && getDeviceDataByName('model') == "lumi.curtain") {
                 // The position event that comes after this one is a real position
@@ -184,14 +200,15 @@ ArrayList<String> parse(description) {
             logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 0)
             //read attr - raw: 63A10100000804042000, dni: 63A1, endpoint: 01, cluster: 0000, size: 08, attrId: 0404, encoding: 20, command: 0A, value: 00, parseMap:[raw:63A10100000804042000, dni:63A1, endpoint:01, cluster:0000, size:08, attrId:0404, encoding:20, command:0A, value:00, clusterInt:0, attrInt:1028]
         }
-    } else if (msgMap["clusterId"] == "0013" && msgMap["command"] == "00") {
+    } else if(msgMap["clusterId"] == "0013" && msgMap["command"] == "00") {
         logging("Unhandled KNOWN event - description:${description} | parseMap:${msgMap}", 0)
-        // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E, parseMap:[raw:63A1010000200500420C6C756D692E6375727461696E, dni:63A1, endpoint:01, cluster:0000, size:20, attrId:0005, encoding:42, command:0A, value:lumi.curtain, clusterInt:0, attrInt:5]
-    } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0005") {
+        // Event Description:
+        // read attr - raw: 63A1010000200500420C6C756D692E6375727461696E, dni: 63A1, endpoint: 01, cluster: 0000, size: 20, attrId: 0005, encoding: 42, command: 0A, value: 0C6C756D692E6375727461696E
+    } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0005") {
         logging("Reset button pressed - description:${description} | parseMap:${msgMap}", 1)
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
-    } else if (msgMap["cluster"] == "0000" && msgMap["attrId"] == "0007") {
+    } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0007") {
         logging("Handled KNOWN event (BASIC_ATTR_POWER_SOURCE) - description:${description} | parseMap:${msgMap}", 1)
         if(msgMap["value"] == "03") {
             sendEvent(name:"powerSource", value: "battery")
@@ -200,22 +217,23 @@ ArrayList<String> parse(description) {
         } else {
             sendEvent(name:"powerSource", value: "unknown")
         }
-        // Answer to zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
-        //read attr - raw: 63A10100000A07003001, dni: 63A1, endpoint: 01, cluster: 0000, size: 0A, attrId: 0007, encoding: 30, command: 01, value: 01, parseMap:[raw:63A10100000A07003001, dni:63A1, endpoint:01, cluster:0000, size:0A, attrId:0007, encoding:30, command:01, value:01, clusterInt:0, attrInt:7]
-    } else if (msgMap["cluster"] == "0102" && msgMap["attrId"] == "0008") {
+        // Description received for zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE):
+        // read attr - raw: 63A10100000A07003001, dni: 63A1, endpoint: 01, cluster: 0000, size: 0A, attrId: 0007, encoding: 30, command: 01, value: 01
+    } else if(msgMap["cluster"] == "0102" && msgMap["attrId"] == "0008") {
         logging("Position event (after pressing stop) - description:${description} | parseMap:${msgMap}", 0)
         Long theValue = Long.parseLong(msgMap["value"], 16)
         curtainPosition = theValue.intValue()
         logging("GETTING POSITION from cluster 0102: int => ${curtainPosition}", 1)
         positionEvent(curtainPosition)
+        // Position event Descriptions:
         //read attr - raw: 63A1010102080800204E, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 4E
-        //read attr - raw: 63A1010102080800203B, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 3B | parseMap:[raw:63A1010102080800203B, dni:63A1, endpoint:01, cluster:0102, size:08, attrId:0008, encoding:20, command:0A, value:3B, clusterInt:258, attrInt:8]
-    } else if (msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
+        //read attr - raw: 63A1010102080800203B, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 3B
+    } else if(msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
         logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 0)
         // Xiaomi/Aqara specific data structure, contains data we probably don't need
-    } else if (msgMap["cluster"] == "000D" && msgMap["attrId"] == "0055") {
+    } else if(msgMap["cluster"] == "000D" && msgMap["attrId"] == "0055") {
         logging("cluster 000D", 1)
-		if (msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
+		if(msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
             // This is sent just after sending a command to open/close and just after the curtain is done moving
 			Long theValue = Long.parseLong(msgMap["value"], 16)
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
@@ -228,11 +246,11 @@ ArrayList<String> parse(description) {
                 logging("SETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 1)
                 positionEvent(curtainPosition)
             }
-		} else if (msgMap["size"] == "28" && msgMap["value"] == "00000000") {
+		} else if(msgMap["size"] == "28" && msgMap["value"] == "00000000") {
 			logging("Requesting Position", 1)
 			cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
 		}
-	} else if (msgMap["cluster"] == "0001" && msgMap["attrId"] == "0021") {
+	} else if(msgMap["cluster"] == "0001" && msgMap["attrId"] == "0021") {
         if(getDeviceDataByName('model') != "lumi.curtain") {
             def bat = msgMap["value"]
             Long value = Long.parseLong(bat, 16)/2
@@ -244,22 +262,22 @@ ArrayList<String> parse(description) {
 		log.warn "Unhandled Event - description:${description} | msgMap:${msgMap}"
 	}
     
-    // BEGIN:getGenericZigbeeParseFooter()
+    // BEGIN:getGenericZigbeeParseFooter(loglevel=0)
     // parse() Generic Zigbee-device footer BEGINS here
-    logging("PARSE END-----------------------", 1)
+    logging("PARSE END-----------------------", 0)
     return cmd
     // parse() Generic footer ENDS here
-    // END:  getGenericZigbeeParseFooter()
+    // END:  getGenericZigbeeParseFooter(loglevel=0)
 }
 
 void positionEvent(Integer curtainPosition) {
 	String windowShadeStatus = ""
 	if(curtainPosition <= 2) curtainPosition = 0
     if(curtainPosition >= 98) curtainPosition = 100
-    if (curtainPosition == 100) {
+    if(curtainPosition == 100) {
         logging("Fully Open", 1)
         windowShadeStatus = "open"
-    } else if (curtainPosition > 0) {
+    } else if(curtainPosition > 0) {
         logging(curtainPosition + '% Partially Open', 1)
         windowShadeStatus = "partially open"
     } else {
@@ -282,30 +300,6 @@ void positionEvent(Integer curtainPosition) {
             sendEvent(name:"switch", value: 'on')
         }
     }
-}
-
-// Convert raw 4 digit integer voltage value into percentage based on minVolts/maxVolts range
-private parseBattery(String hexString) {
-    // All credits go to veeceeoh for this battery parsing method!
-    logging("Battery full string = ${hexString}", 1)
-    // Moved this one byte to the left due to how the built-in parser work, needs testing!
-	//def hexBattery = (hexString[8..9] + hexString[6..7])
-    def hexBattery = (hexString[6..7] + hexString[4..5])
-    logging("Battery parsed string = ${hexBattery}", 1)
-	def rawValue = Integer.parseInt(hexBattery,16)
-	def rawVolts = rawValue / 1000
-	def minVolts = voltsmin ? voltsmin : 2.8
-	def maxVolts = voltsmax ? voltsmax : 3.05
-	def pct = (rawVolts - minVolts) / (maxVolts - minVolts)
-	def roundedPct = Math.min(100, Math.round(pct * 100))
-	logging("Battery report: $rawVolts Volts ($roundedPct%), calculating level based on min/max range of $minVolts to $maxVolts", 1)
-	def descText = "Battery level is $roundedPct% ($rawVolts Volts)"
-	return [
-		name: 'battery',
-		value: roundedPct,
-		unit: "%",
-		descriptionText: descText
-	]
 }
 
 void updated() {
@@ -447,7 +441,7 @@ void setPosition(position) {
     Integer currentPosition = device.currentValue("position")
     if(position > currentPosition) {
         sendEvent(name: "windowShade", value: "opening")
-    } else if (position < currentPosition) {
+    } else if(position < currentPosition) {
         sendEvent(name: "windowShade", value: "closing")
     }
     if(position == 100 && getDeviceDataByName('model') == "lumi.curtain") {
@@ -524,7 +518,7 @@ ArrayList<String> getBattery() {
 private String getDriverVersion() {
     comment = "Works with models ZNCLDJ11LM & ZNCLDJ12LM"
     if(comment != "") state.comment = comment
-    String version = "v1.0.1.0425"
+    String version = "v1.0.1.0427"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -845,7 +839,7 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
         } else {
-            logging("Not updating lastCheckin since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+            logging("Not updating lastCheckin since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 0)
         }
 	}
     if (lastCheckinEpochEnable == true) {
@@ -853,13 +847,45 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 		    sendEvent(name: "lastCheckinEpoch", value: now())
             logging("Updated lastCheckinEpoch", 1)
         } else {
-            logging("Not updating lastCheckinEpoch since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 1)
+            logging("Not updating lastCheckinEpoch since at least $minimumMinutesToRepeat minute(s) has not yet passed since last checkin.", 0)
         }
 	}
 }
 
+void checkPresence() {
+    Long lastCheckinTime = null
+    if (lastCheckinEnable == true && device.currentValue('lastCheckin') != null) {
+        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
+    } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
+        lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
+    }
+    if(lastCheckinTime != null && lastCheckinTime >= now() - (3 * 60 * 60 * 1000)) {
+        // There was an event within the last 3 hours, all is well
+        sendEvent(name: "presence", value: "present")
+    } else {
+        sendEvent(name: "presence", value: "not present")
+    }
+}
+
 void resetBatteryReplacedDate() {
     sendEvent(name: "batteryLastReplaced", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+}
+
+void parseAndSendBatteryStatus(BigDecimal vCurrent) {
+    BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
+    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMinSetting
+
+    BigDecimal bat = 0
+    if(vMax - vMin > 0) {
+        bat = ((vCurrent - vMin) / (vMax - vMin)) * 100.0
+    } else {
+        bat = 100
+    }
+    bat = bat.setScale(1, BigDecimal.ROUND_HALF_UP)
+    bat = bat > 100 ? 100 : bat
+
+    logging("Battery event: $bat% (V = $vCurrent)", 1)
+    sendEvent(name:"battery", value: bat, unit: "%", isStateChange: false)
 }
 
  /**
@@ -970,15 +996,18 @@ void installed() {
 }
 
 // Call order: installed() -> configure() -> updated() -> initialize() -> refresh()
-void configure() {
+def configure() {
     logging("configure()", 100)
     if(isDriver()) {
         // Do NOT call updateNeededSettings() here!
-        updated()
+        try {
+            return configureAdditional()
+        } catch (MissingMethodException e) {
+            updated()
+        }
         try {
             // Run the getDriverVersion() command
-            def newCmds = getDriverVersion()
-            if (newCmds != null && newCmds != []) cmds = cmds + newCmds
+            getDriverVersion()
         } catch (MissingMethodException e) {
             // ignore
         }

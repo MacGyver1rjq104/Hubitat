@@ -49,7 +49,7 @@ metadata {
         // BEGIN:getDefaultMetadataPreferences()
         // Default Preferences
         input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
-        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultMetadataPreferences()
 
     }
@@ -225,8 +225,8 @@ void setLevel(BigDecimal level, BigDecimal duration) {
 // BEGIN:getDefaultFunctions()
 /* Default Driver Methods go here */
 private String getDriverVersion() {
-    //comment = ""
-    //if(comment != "") state.comment = comment
+    comment = ""
+    if(comment != "") state.comment = comment
     String version = "v1.0.1.0425Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
@@ -390,6 +390,17 @@ String generateMD5(String s) {
 
 Integer extractInt(String input) {
   return input.replaceAll("[^0-9]", "").toInteger()
+}
+
+String hexToASCII(String hexValue) {
+    StringBuilder output = new StringBuilder("")
+    for (int i = 0; i < hexValue.length(); i += 2) {
+        String str = hexValue.substring(i, i + 2)
+        output.append((char) Integer.parseInt(str, 16) + 30)
+        logging("${Integer.parseInt(str, 16)}", 10)
+    }
+    logging("hexToASCII: ${output.toString()}", 0)
+    return output.toString()
 }
 
 /**

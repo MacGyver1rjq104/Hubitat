@@ -190,7 +190,7 @@ def getDefaultParentMetadataPreferences(includeCSS=False):
 // Default Parent Preferences
 input(name: "runReset", description: addDescriptionDiv("For details and guidance, see the release thread in the <a href=\\\"https://community.hubitat.com/t/release-tasmota-7-x-firmware-with-hubitat-support/29368\\\"> Hubitat Forum</a>. For settings marked as ADVANCED, make sure you understand what they do before activating them. If settings are not reflected on the device, press the Configure button in this driver. Also make sure all settings really are saved and correct."), title: addTitleDiv("Settings"), displayDuringSetup: false, type: "paragraph", element: "paragraph")
 input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
-input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
 def getDefaultMetadataPreferences(includeCSS=False, includeRunReset=False):
@@ -206,7 +206,7 @@ input(name: "runReset", description: addDescriptionDiv("DISABLE BEFORE RELEASE")
     return """
 // Default Preferences""" + includedRunReset + """
 input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
-input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
 def getDefaultMetadataPreferencesLast():
@@ -261,6 +261,14 @@ def getDefaultMetadataPreferencesForZigbeeDevices():
 // Default Preferences for Zigbee Devices
 input(name: "lastCheckinEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Date"), description: addDescriptionDiv("Records Date events if enabled"), defaultValue: true)
 input(name: "lastCheckinEpochEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Epoch"), description: addDescriptionDiv("Records Epoch events if enabled"), defaultValue: false)
+input(name: "presenceEnable", type: "bool", title: addTitleDiv("Enable Presence"), description: addDescriptionDiv("Enables Presence to indicate if the device has sent data within the last 3 hours (REQUIRES at least one of the Checkin options to be enabled)"), defaultValue: true)
+'''
+
+def getMetadataPreferencesForZigbeeDevicesWithBattery():
+    return '''
+// Preferences for Zigbee Devices with Battery
+input(name: "vMinSetting", type: "decimal", title: addTitleDiv("Battery Minimum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 0% (default = 2.6V)"), defaultValue: "2.6", range: "2.1..2.8")
+input(name: "vMaxSetting", type: "decimal", title: addTitleDiv("Battery Maximum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 100% (default = 3.1V)"), defaultValue: "3.1", range: "2.9..3.4")
 '''
 
 def getDefaultMetadataPreferencesForParentDevicesWithUnlimitedChildren(numSwitches=1):
