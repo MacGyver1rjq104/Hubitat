@@ -26,9 +26,7 @@ metadata {
         //command "configureAdditional"
 
         // Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)
-        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"
-
-	}
+        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"	}
 
     preferences {
         #!include:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
@@ -53,7 +51,8 @@ ArrayList<String> refresh() {
 
     getDriverVersion()
     configurePresence()
-    
+    setLogsOffTask(noLogWarning=true)
+
     ArrayList<String> cmd = []
     //cmd += zigbee.readAttribute(0x001, 0)
     
@@ -125,6 +124,7 @@ ArrayList<String> parse(String description) {
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
         sendZigbeeCommands(configureAdditional() + zigbee.readAttribute(CLUSTER_POWER, 0x0020))
+        refresh()
         //sendZigbeeCommands(zigbee.readAttribute(CLUSTER_POWER, 0x0020))
         // Reset button event Description:
         // read attr - raw: 5DF00100002C050042126C756D692E73656E5F696C6C2E6D676C3031, dni: 5DF0, endpoint: 01, cluster: 0000, size: 2C, attrId: 0005, encoding: 42, command: 0A, value: 126C756D692E73656E5F696C6C2E6D676C3031

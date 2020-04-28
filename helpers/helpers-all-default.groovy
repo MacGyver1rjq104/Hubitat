@@ -28,6 +28,20 @@ void deviceCommand(cmd) {
     updateDataValue('appReturn', JsonOutput.toJson(r))
 }
 
+void setLogsOffTask(boolean noLogWarning=false) {
+    // disable debug logs after 30 min, unless override is in place
+	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
+        if(noLogWarning==false) {
+            if(runReset != "DEBUG") {
+                log.warn "Debug logging will be disabled in 30 minutes..."
+            } else {
+                log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
+            }
+        }
+        runIn(1800, "logsOff")
+    }
+}
+
 /*
 	initialize
 
@@ -41,26 +55,7 @@ void deviceCommand(cmd) {
 def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
-    // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
-        if(runReset != "DEBUG") {
-            log.warn "Debug logging will be disabled in 30 minutes..."
-        } else {
-            log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
-        }
-        runIn(1800, "logsOff")
-    }
-    if(isDriver()) {
-        if(!isDeveloperHub()) {
-            device.removeSetting("logLevel")
-            device.updateSetting("logLevel", "0")
-        } else {
-            device.removeSetting("debugLogging")
-            device.updateSetting("debugLogging", "false")
-            device.removeSetting("infoLogging")
-            device.updateSetting("infoLogging", "false")
-        }
-    }
+    setLogsOffTask()
     try {
         // In case we have some more to run specific to this driver/app
         initializeAdditional()

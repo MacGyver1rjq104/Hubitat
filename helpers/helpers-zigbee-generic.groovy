@@ -20,6 +20,10 @@ private getENCODING_SIZE() { 0x39 }
 
 
 /* --------- GENERIC METHODS --------- */
+void updateNeededSettings() {
+    // Ignore, included for compatinility with the driver framework
+}
+
 ArrayList<String> zigbeeWriteLongAttribute(Integer cluster, Integer attributeId, Integer dataType, Long value, Map additionalParams = [:], int delay = 2000) {
     logging("zigbeeWriteLongAttribute()", 1)
     String mfgCode = ""
@@ -65,7 +69,7 @@ String setCleanModelName(String newModelToSet=null) {
 }
 
 void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
-    if (lastCheckinEnable == true) {
+    if (lastCheckinEnable == true || lastCheckinEnable == null) {
         if(device.currentValue('lastCheckin') == null || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
@@ -85,7 +89,7 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 
 void checkPresence() {
     Long lastCheckinTime = null
-    if (lastCheckinEnable == true && device.currentValue('lastCheckin') != null) {
+    if ((lastCheckinEnable == true || lastCheckinEnable == null) && device.currentValue('lastCheckin') != null) {
         lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
     } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
         lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
@@ -95,17 +99,20 @@ void checkPresence() {
         sendEvent(name: "presence", value: "present")
     } else {
         sendEvent(name: "presence", value: "not present")
+        log.warn("No event seen from the device for over 3 hours! Something is not right...")
     }
 }
 
-void resetBatteryReplacedDate() {
-    sendEvent(name: "batteryLastReplaced", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+void resetBatteryReplacedDate(boolean forced=true) {
+    if(forced == true || device.currentValue('batteryLastReplaced') == null) {
+        sendEvent(name: "batteryLastReplaced", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
+    }
 }
 
 void parseAndSendBatteryStatus(BigDecimal vCurrent) {
     BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
-    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMinSetting
-
+    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMaxSetting
+    
     BigDecimal bat = 0
     if(vMax - vMin > 0) {
         bat = ((vCurrent - vMin) / (vMax - vMin)) * 100.0
@@ -114,9 +121,269 @@ void parseAndSendBatteryStatus(BigDecimal vCurrent) {
     }
     bat = bat.setScale(1, BigDecimal.ROUND_HALF_UP)
     bat = bat > 100 ? 100 : bat
+    
+    vCurrent = vCurrent.setScale(3, BigDecimal.ROUND_HALF_UP)
 
     logging("Battery event: $bat% (V = $vCurrent)", 1)
     sendEvent(name:"battery", value: bat, unit: "%", isStateChange: false)
+}
+
+Map unpackStructInMap(Map msgMap, String originalEncoding="4C") {
+    // This is a LIMITED implementation, it only does what is needed by any of my drivers so far
+    // This is NOT optimized for speed, it is just a convenient way of doing things
+    logging("unpackStructInMap()", 0)
+    msgMap['encoding'] = originalEncoding
+    List<String> values = msgMap['value'].split("(?<=\\G..)")
+    Integer numElements = Integer.parseInt(values.take(2).reverse().join(), 16)
+    values = values.drop(2)
+    List r = []
+    while(values != []) {
+        Integer cType = Integer.parseInt(values.take(1)[0], 16)
+        values = values.drop(1)
+        switch(cType) {
+            case 0x10:
+                // BOOLEAN
+                r += Integer.parseInt(values.take(1)[0], 16) != 0
+                values = values.drop(1)
+                break
+            case 0x20:
+                // UINT8
+                r += Integer.parseInt(values.take(1)[0], 16)
+                values = values.drop(1)
+                break
+            case 0x21:
+                // UINT16
+                r += Integer.parseInt(values.take(2).reverse().join(), 16)
+                values = values.drop(2)
+                break
+            case 0x22:
+                // UINT24
+                r += Integer.parseInt(values.take(3).reverse().join(), 16)
+                values = values.drop(3)
+                break
+            case 0x23:
+                // UINT24
+                r += Long.parseLong(values.take(4).reverse().join(), 16)
+                values = values.drop(4)
+                break
+            case 0x24:
+                // UINT40
+                r += Long.parseLong(values.take(5).reverse().join(), 16)
+                values = values.drop(5)
+                break
+            case 0x25:
+                // UINT48
+                r += Long.parseLong(values.take(6).reverse().join(), 16)
+                values = values.drop(6)
+                break
+            case 0x26:
+                // UINT56
+                r += Long.parseLong(values.take(7).reverse().join(), 16)
+                values = values.drop(7)
+                break
+            case 0x27:
+                // UINT64
+                r += new BigInteger(values.take(8).reverse().join(), 16)
+                values = values.drop(8)
+                break
+            case 0x28:
+                // INT8
+                r += convertToSignedInt8(Integer.parseInt(values.take(1).reverse().join(), 16))
+                values = values.drop(1)
+                break
+            case 0x29:
+                // INT16 - Short forces the sign
+                r += (Integer) (short) Integer.parseInt(values.take(2).reverse().join(), 16)
+                values = values.drop(2)
+                break
+            case 0x2B:
+                // INT32 - Long to Integer forces the sign
+                r += (Integer) Long.parseLong(values.take(4).reverse().join(), 16)
+                values = values.drop(4)
+                break
+            case 0x39:
+                // FLOAT - Single Precision
+                r += Float.intBitsToFloat(Long.valueOf(values.take(4).reverse().join(), 16).intValue())
+                values = values.drop(4)
+                break
+            default:
+                throw new Exception("The STRUCT used an unrecognized type: $cType (0x${Long.toHexString(cType)})")
+        }
+    }
+    if(r.size() != numElements) throw new Exception("The STRUCT specifies $numElements elements, found ${r.size()}!")
+    logging("split: ${r}, numElements: $numElements", 0)
+    msgMap['value'] = r
+    return msgMap
+}
+
+Map parseXiaomiStruct(String xiaomiStruct, boolean isFCC0=false, boolean hasLength=false) {
+    logging("parseXiaomiStruct()", 0)
+    // https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Xiaomi-manufacturer-specific-clusters,-attributes-and-attribute-reporting
+    Map tags = [
+        '01': 'battery',
+        '03': 'deviceTemperature',
+        '04': 'unknown1',
+        '05': 'RSSI_dB',
+        '06': 'LQI',
+        '07': 'unknown2',
+        '08': 'unknown3',
+        '09': 'unknown4',
+        '0A': 'unknown5',
+        '0B': 'unknown6',
+        '0C': 'unknown6',
+        '6429': 'temperature',
+        '6410': 'openClose',
+        '6420': 'curtainPosition',
+        '65': 'humidity',
+        '66': 'pressure',
+        '95': 'consumption',
+        '96': 'voltage',
+        '9721': 'gestureCounter1',
+        '9739': 'consumption',
+        '9821': 'gestureCounter2',
+        '9839': 'power',
+        '99': 'gestureCounter3',
+        '9A21': 'gestureCounter4',
+        '9A20': 'unknown7',
+        '9A25': 'unknown8',
+        '9B': 'unknown9',
+    ]
+    if(isFCC0 == true) {
+        tags['05'] = 'numBoots'
+        tags['6410'] = 'onOff'
+        tags['95'] = 'current'
+    }
+
+    List<String> values = xiaomiStruct.split("(?<=\\G..)")
+    
+    if(hasLength == true) values = values.drop(1)
+    Map r = [:]
+    r["raw"] = [:]
+    String cTag = null
+    String cTypeStr = null
+    Integer cType = null
+    String cKey = null
+    while(values != []) {
+        cTag = values.take(1)[0]
+        values = values.drop(1)
+        cTypeStr = values.take(1)[0]
+        cType = Integer.parseInt(cTypeStr, 16)
+        values = values.drop(1)
+        if(tags.containsKey(cTag+cTypeStr)) {
+            cKey = tags[cTag+cTypeStr]
+        } else if(tags.containsKey(cTag)) {
+            cKey = tags[cTag]
+        } else {
+            throw new Exception("The Xiaomi Struct used an unrecognized tag: 0x$cTag (type: 0x$cTypeStr)")
+        }
+        switch(cType) {
+            case 0x10:
+                // BOOLEAN
+                r["raw"][cKey] = values.take(1)[0]
+                r[cKey] = Integer.parseInt(r["raw"][cKey], 16) != 0
+                values = values.drop(1)
+                break
+            case 0x20:
+                // UINT8
+                r["raw"][cKey] = values.take(1)[0]
+                r[cKey] = Integer.parseInt(r["raw"][cKey], 16)
+                values = values.drop(1)
+                break
+            case 0x21:
+                // UINT16
+                r["raw"][cKey] = values.take(2).reverse().join()
+                r[cKey] = Integer.parseInt(r["raw"][cKey], 16)
+                values = values.drop(2)
+                break
+            case 0x22:
+                // UINT24
+                r["raw"][cKey] = values.take(3).reverse().join()
+                r[cKey] = Integer.parseInt(r["raw"][cKey], 16)
+                values = values.drop(3)
+                break
+            case 0x23:
+                // UINT32
+                r["raw"][cKey] = values.take(4).reverse().join()
+                r[cKey] = Long.parseLong(r["raw"][cKey], 16)
+                values = values.drop(4)
+                break
+            case 0x24:
+                // UINT40
+                r["raw"][cKey] = values.take(5).reverse().join()
+                r[cKey] = Long.parseLong(r["raw"][cKey], 16)
+                values = values.drop(5)
+                break
+            case 0x25:
+                // UINT48
+                r["raw"][cKey] = values.take(6).reverse().join()
+                r[cKey] = Long.parseLong(r["raw"][cKey], 16)
+                values = values.drop(6)
+                break
+            case 0x26:
+                // UINT56
+                r["raw"][cKey] = values.take(7).reverse().join()
+                r[cKey] = Long.parseLong(r["raw"][cKey], 16)
+                values = values.drop(7)
+                break
+            case 0x27:
+                // UINT64
+                r["raw"][cKey] = values.take(8).reverse().join()
+                r[cKey] = new BigInteger(r["raw"][cKey], 16)
+                values = values.drop(8)
+                break
+            case 0x28:
+                // INT8
+                r["raw"][cKey] = values.take(1).reverse().join()
+                r[cKey] = convertToSignedInt8(Integer.parseInt(r["raw"][cKey], 16))
+                values = values.drop(1)
+                break
+            case 0x29:
+                // INT16 - Short forces the sign
+                r["raw"][cKey] = values.take(2).reverse().join()
+                r[cKey] = (Integer) (short) Integer.parseInt(r["raw"][cKey], 16)
+                values = values.drop(2)
+                break
+            case 0x2B:
+                // INT32 - Long to Integer forces the sign
+                r["raw"][cKey] = values.take(4).reverse().join()
+                r[cKey] = (Integer) Long.parseLong(r["raw"][cKey], 16)
+                values = values.drop(4)
+                break
+            case 0x39:
+                // FLOAT - Single Precision
+                r["raw"][cKey] = values.take(4).reverse().join()
+                r[cKey] = Float.intBitsToFloat(Long.valueOf(r["raw"][cKey], 16).intValue())
+                values = values.drop(4)
+                break
+            default:
+                throw new Exception("The Xiaomi Struct used an unrecognized type: 0x$cTypeStr for tag 0x$cTag with key $cKey")
+        }
+    }
+    logging("Values: $r", 0)
+    return r
+}
+
+Integer convertToSignedInt8(Integer signedByte) {
+    Integer sign = signedByte & (1 << 7);
+    return (signedByte & 0x7f) * (sign != 0 ? -1 : 1);
+}
+
+Integer parseIntReverseHex(String hexString) {
+    return Integer.parseInt(hexString.split("(?<=\\G..)").reverse().join(), 16)
+}
+
+Long parseLongReverseHex(String hexString) {
+    return Long.parseLong(hexString.split("(?<=\\G..)").reverse().join(), 16)
+}
+
+void configurePresence() {
+    if(presenceEnable == null || presenceEnable == true) {
+        sendEvent(name: "presence", value: "present")
+        Random rnd = new Random()
+        schedule("${rnd.nextInt(59)} ${rnd.nextInt(59)} 1/3 * * ? *", 'checkPresence')
+    } else {
+        unschedule('checkPresence')
+    }
 }
 
  /**

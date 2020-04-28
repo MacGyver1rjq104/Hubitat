@@ -343,8 +343,7 @@ def main():
          'comment': 'Works with models WXKG01LM, WXKG11LM (2015), WXKG11LM (2018), WXKG12LM, WXKG02LM (2016 & 2018) & WXKG03LM (2016 & 2018)' },
         {'id': 1122, 'id_3': 0, 'file': 'zigbee-xiaomi-mijia-smart-light-sensor.groovy', 'version': 'v0.6.1.MMDD',
          'comment': 'Works with model GZCGQ01LM.' },
-        # TODO: Get a WXKG01LM and add support for that one as well
-        
+
         # Virtual
         {'id': 962, 'file': 'javascript-injection-driver.groovy', 'version': 'v0.1.0.MMDDb' },
 

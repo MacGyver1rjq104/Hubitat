@@ -68,6 +68,7 @@ ArrayList<String> refresh() {
 
     getDriverVersion()
     configurePresence()
+    setLogsOffTask(noLogWarning=true)
 
     ArrayList<String> cmd = []
     cmd += getPosition()

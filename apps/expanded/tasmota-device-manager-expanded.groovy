@@ -3,7 +3,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0425Tb
+ *  Version: v1.0.1.0428Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -656,7 +656,7 @@ Map getTimeStringSinceDateWithMaximum(myDate, maxMillis) {
 // BEGIN:getDefaultAppMethods()
 /* Default App Methods go here */
 private String getAppVersion() {
-    String version = "v1.0.1.0425Tb"
+    String version = "v1.0.1.0428Tb"
     logging("getAppVersion() = ${version}", 50)
     return version
 }
@@ -681,7 +681,7 @@ Map mainPage() {
                 getElementStyle('separator')
                 // BEGIN:getDefaultMetadataPreferences()
                 // Default Preferences
-                input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
+                input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
                 input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
                 // END:  getDefaultMetadataPreferences()
                 input("passwordDefault", "password", title:"Default Tasmota Password", submitOnChange: true, displayDuringSetup: true)
@@ -1331,15 +1331,15 @@ def initializeAdditional() {
 /* Logging function included in all drivers */
 private boolean logging(message, level) {
     boolean didLogging = false
-    Integer logLevelLocal = (logLevel != null ? logLevel.toInteger() : 0)
+    //Integer logLevelLocal = (logLevel != null ? logLevel.toInteger() : 0)
     //if(!isDeveloperHub()) {
-        logLevelLocal = 0
-        if (infoLogging == true) {
-            logLevelLocal = 100
-        }
-        if (debugLogging == true) {
-            logLevelLocal = 1
-        }
+    Integer logLevelLocal = 0
+    if (infoLogging == null || infoLogging == true) {
+        logLevelLocal = 100
+    }
+    if (debugLogging == null || debugLogging == true) {
+        logLevelLocal = 1
+    }
     //}
     if (logLevelLocal != 0){
         switch (logLevelLocal) {
@@ -1426,6 +1426,20 @@ void deviceCommand(cmd) {
     updateDataValue('appReturn', JsonOutput.toJson(r))
 }
 
+void setLogsOffTask(boolean noLogWarning=false) {
+    // disable debug logs after 30 min, unless override is in place
+	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
+        if(noLogWarning==false) {
+            if(runReset != "DEBUG") {
+                log.warn "Debug logging will be disabled in 30 minutes..."
+            } else {
+                log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
+            }
+        }
+        runIn(1800, "logsOff")
+    }
+}
+
 /*
 	initialize
 
@@ -1439,26 +1453,7 @@ void deviceCommand(cmd) {
 def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
-    // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
-        if(runReset != "DEBUG") {
-            log.warn "Debug logging will be disabled in 30 minutes..."
-        } else {
-            log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
-        }
-        runIn(1800, "logsOff")
-    }
-    if(isDriver()) {
-        if(!isDeveloperHub()) {
-            device.removeSetting("logLevel")
-            device.updateSetting("logLevel", "0")
-        } else {
-            device.removeSetting("debugLogging")
-            device.updateSetting("debugLogging", "false")
-            device.removeSetting("infoLogging")
-            device.updateSetting("infoLogging", "false")
-        }
-    }
+    setLogsOffTask()
     try {
         // In case we have some more to run specific to this driver/app
         initializeAdditional()

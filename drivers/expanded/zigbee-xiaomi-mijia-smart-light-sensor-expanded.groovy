@@ -67,9 +67,7 @@ metadata {
         //command "configureAdditional"
 
         // Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)
-        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"
-
-	}
+        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"	}
 
     preferences {
         // BEGIN:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
@@ -116,7 +114,8 @@ ArrayList<String> refresh() {
 
     getDriverVersion()
     configurePresence()
-    
+    setLogsOffTask(noLogWarning=true)
+
     ArrayList<String> cmd = []
     //cmd += zigbee.readAttribute(0x001, 0)
     
@@ -206,6 +205,7 @@ ArrayList<String> parse(String description) {
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
         sendZigbeeCommands(configureAdditional() + zigbee.readAttribute(CLUSTER_POWER, 0x0020))
+        refresh()
         //sendZigbeeCommands(zigbee.readAttribute(CLUSTER_POWER, 0x0020))
         // Reset button event Description:
         // read attr - raw: 5DF00100002C050042126C756D692E73656E5F696C6C2E6D676C3031, dni: 5DF0, endpoint: 01, cluster: 0000, size: 2C, attrId: 0005, encoding: 42, command: 0A, value: 126C756D692E73656E5F696C6C2E6D676C3031
@@ -466,6 +466,20 @@ void deviceCommand(cmd) {
     updateDataValue('appReturn', JsonOutput.toJson(r))
 }
 
+void setLogsOffTask(boolean noLogWarning=false) {
+    // disable debug logs after 30 min, unless override is in place
+	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
+        if(noLogWarning==false) {
+            if(runReset != "DEBUG") {
+                log.warn "Debug logging will be disabled in 30 minutes..."
+            } else {
+                log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
+            }
+        }
+        runIn(1800, "logsOff")
+    }
+}
+
 /*
 	initialize
 
@@ -479,26 +493,7 @@ void deviceCommand(cmd) {
 def initialize() {
     logging("initialize()", 100)
 	unschedule("updatePresence")
-    // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
-        if(runReset != "DEBUG") {
-            log.warn "Debug logging will be disabled in 30 minutes..."
-        } else {
-            log.warn "Debug logging will NOT BE AUTOMATICALLY DISABLED!"
-        }
-        runIn(1800, "logsOff")
-    }
-    if(isDriver()) {
-        if(!isDeveloperHub()) {
-            device.removeSetting("logLevel")
-            device.updateSetting("logLevel", "0")
-        } else {
-            device.removeSetting("debugLogging")
-            device.updateSetting("debugLogging", "false")
-            device.removeSetting("infoLogging")
-            device.updateSetting("infoLogging", "false")
-        }
-    }
+    setLogsOffTask()
     try {
         // In case we have some more to run specific to this driver/app
         initializeAdditional()
