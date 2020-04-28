@@ -356,7 +356,7 @@ ArrayList<String> configureAdditional() {
 // BEGIN:getDefaultFunctions()
 /* Default Driver Methods go here */
 private String getDriverVersion() {
-    comment = "Works with model WXKG01LM."
+    comment = "Works with model GZCGQ01LM."
     if(comment != "") state.comment = comment
     String version = "v0.6.1.0428"
     logging("getDriverVersion() = ${version}", 100)
