@@ -19,16 +19,18 @@ def getGenericZigbeeParseHeader(loglevel=0):
 logging("PARSE START---------------------", """ + str(loglevel) + """)
 logging("Parsing: '${description}'", """ + str(loglevel) + """)
 ArrayList<String> cmd = []
-boolean hasStruct = false
 Map msgMap = null
 if(description.indexOf('encoding: 4C') >= 0) {
   // Parsing of STRUCT (4C) is broken in HE, for now we need a workaround
-  msgMap = zigbee.parseDescriptionAsMap(description.replace('encoding: 4C', 'encoding: F2'))
-  hasStruct = true
+  msgMap = unpackStructInMap(zigbee.parseDescriptionAsMap(description.replace('encoding: 4C', 'encoding: F2')))
+} else if(description.indexOf('attrId: FF01, encoding: 42') >= 0) {
+  msgMap = zigbee.parseDescriptionAsMap(description.replace('encoding: 42', 'encoding: F2'))
+  msgMap["encoding"] = "41"
+  msgMap["value"] = parseXiaomiStruct(msgMap["value"], isFCC0=false, hasLength=true)
 } else {
   msgMap = zigbee.parseDescriptionAsMap(description)
 }
-logging("msgMap: ${msgMap} (hasStruct=$hasStruct)", """ + str(loglevel) + """)
+logging("msgMap: ${msgMap}", """ + str(loglevel) + """)
 // parse() Generic header ENDS here"""
 
 def getGenericZigbeeParseFooter(loglevel=0):

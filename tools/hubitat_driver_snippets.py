@@ -350,15 +350,15 @@ def getLoggingFunction(specialDebugLevel=True):
     return """/* Logging function included in all drivers */
 private boolean logging(message, level) {
     boolean didLogging = false
-    Integer logLevelLocal = (logLevel != null ? logLevel.toInteger() : 0)
+    //Integer logLevelLocal = (logLevel != null ? logLevel.toInteger() : 0)
     //if(!isDeveloperHub()) {
-        logLevelLocal = 0
-        if (infoLogging == true) {
-            logLevelLocal = 100
-        }
-        if (debugLogging == true) {
-            logLevelLocal = 1
-        }
+    Integer logLevelLocal = 0
+    if (infoLogging == null || infoLogging == true) {
+        logLevelLocal = 100
+    }
+    if (debugLogging == null || debugLogging == true) {
+        logLevelLocal = 1
+    }
     //}
     if (logLevelLocal != 0){
         switch (logLevelLocal) {

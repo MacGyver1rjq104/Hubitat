@@ -10,12 +10,13 @@ import hubitat.helper.HexUtils
 
 metadata {
 	definition (name: "Zigbee - Aqara Smart Curtain Motor", namespace: "markusl", author: "Markus Liljergren", vid: "generic-shade") {
-        capability "Initialize"
-        capability "Sensor"
+        #!include:getDefaultMetadataCapabilitiesForZigbeeDevices()
+        
+        // Device Specific Capabilities
+        capability "Refresh"
         capability "Battery"
         capability "PowerSource"
         capability "WindowShade"
-        capability "Refresh"
         
         // These 4 capabilities are included to be compatible with integrations like Alexa:
         capability "Actuator"
@@ -47,7 +48,7 @@ metadata {
 	}
 
     preferences {
-        #!include:getDefaultMetadataPreferences(includeCSS=True)
+        #!include:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=True)
         #!include:getDefaultMetadataPreferencesForZigbeeDevices()
 	}
 }
@@ -66,14 +67,18 @@ ArrayList<String> refresh() {
     // https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf
 
     getDriverVersion()
+    configurePresence()
 
     ArrayList<String> cmd = []
     cmd += getPosition()
+    cmd += zigbee.readAttribute(CLUSTER_BASIC, 0xFF01, [mfgCode: "0x115F"])
+    //cmd += zigbee.readAttribute(CLUSTER_BASIC, 0xFF02, [mfgCode: "0x115F"])
     if(getDeviceDataByName('model') != "lumi.curtain") { 
         cmd += getBattery()
     }
     logging("refresh cmd: $cmd", 1)
-    return cmd
+    sendZigbeeCommands(cmd)
+    
 }
 
 // Called from initialize()
@@ -106,7 +111,7 @@ void makeSchedule() {
 }
 
 ArrayList<String> parse(String description) {
-    #!include:getGenericZigbeeParseHeader(loglevel=0)
+    #!include:getGenericZigbeeParseHeader(loglevel=1)
     //logging("msgMap: ${msgMap}", 1)
 
     if(msgMap["profileId"] == "0104" && msgMap["clusterId"] == "000A") {
@@ -144,6 +149,7 @@ ArrayList<String> parse(String description) {
         logging("Reset button pressed - description:${description} | parseMap:${msgMap}", 1)
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
+        refresh()
     } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0007") {
         logging("Handled KNOWN event (BASIC_ATTR_POWER_SOURCE) - description:${description} | parseMap:${msgMap}", 1)
         if(msgMap["value"] == "03") {
@@ -165,15 +171,23 @@ ArrayList<String> parse(String description) {
         //read attr - raw: 63A1010102080800204E, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 4E
         //read attr - raw: 63A1010102080800203B, dni: 63A1, endpoint: 01, cluster: 0102, size: 08, attrId: 0008, encoding: 20, command: 0A, value: 3B
     } else if(msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
-        logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 0)
+        if(msgMap["encoding"] == "42") {
+            // First redo the parsing using a different encoding:
+            msgMap = zigbee.parseDescriptionAsMap(description.replace('encoding: 42', 'encoding: 41'))
+            msgMap["encoding"] = "42"
+            msgMap["value"] = parseXiaomiStruct(msgMap["value"], isFCC0=false)
+        }
+        logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 100)
         // Xiaomi/Aqara specific data structure, contains data we probably don't need
+        // FF01 event Description:
+        // read attr - raw: A5C50100004001FF421C03281F05212B00642058082120110727000000000000000009210304, dni: A5C5, endpoint: 01, cluster: 0000, size: 40, attrId: FF01, encoding: 42, command: 0A, value: 1C03281F05212B00642058082120110727000000000000000009210304
     } else if(msgMap["cluster"] == "000D" && msgMap["attrId"] == "0055") {
         logging("cluster 000D", 1)
 		if(msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
             // This is sent just after sending a command to open/close and just after the curtain is done moving
 			Long theValue = Long.parseLong(msgMap["value"], 16)
 			BigDecimal floatValue = Float.intBitsToFloat(theValue.intValue());
-			logging("GOT POSITION DATA (might not be the actual position): long => ${theValue}, BigDecimal => ${floatValue}", 1)
+			logging("GOT POSITION DATA: long => ${theValue}, BigDecimal => ${floatValue}", 1)
 			curtainPosition = floatValue.intValue()
             if(getDeviceDataByName('model') != "lumi.curtain" && msgMap["command"] == "0A" && curtainPosition == 0) {
                 logging("Sending a request for the actual position...", 1)
@@ -241,10 +255,6 @@ void updated() {
     } catch (MissingMethodException e) {
         // ignore
     }
-}
-
-void updateNeededSettings() {
-    // Ignore
 }
 
 /*
@@ -392,17 +402,6 @@ void setPosition(position) {
     sendZigbeeCommands(cmd)
     //return cmd
 }
-
-/*
-// Only used for debugging
-ArrayList<String> sendAttribute(String attribute) {
-    attribute = attribute.replace(' ', '')
-    logging("sendAttribute(attribute=$attribute) (0x${Long.toHexString(Long.decode("0x$attribute"))})", 1)
-    ArrayList<String> cmd = []
-    cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, Long.decode("0x$attribute"), [mfgCode: "0x115F"])
-    logging("cmd=${cmd}, size=${cmd.size()}", 10)
-    return cmd
-}*/
 
 ArrayList<String> setLevel(level) {
     logging("setLevel(level: ${level})", 1)
