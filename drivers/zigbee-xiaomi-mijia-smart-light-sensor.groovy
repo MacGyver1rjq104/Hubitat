@@ -25,8 +25,8 @@ metadata {
         //command "parse", [[name:"Description*", type: "STRING", description: "description"]]
         //command "configureAdditional"
 
-        // Xiaomi Mijia Smart Light Sensor (WXKG01LM)
-        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (WXKG01LM)"
+        // Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)
+        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"
 
 	}
 
