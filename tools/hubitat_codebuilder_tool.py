@@ -339,11 +339,18 @@ def main():
         {'id': 579, 'file': 'zigbee-generic-wifi-switch-plug.groovy' },
         {'id': 801, 'id_3': 335, 'file': 'zigbee-aqara-smart-curtain-motor.groovy', 'version': 'v1.0.1.MMDD',
          'comment': 'Works with models ZNCLDJ11LM & ZNCLDJ12LM' },
-        {'id': 1121, 'id_3': 0, 'file': 'zigbee-xiaomi-aqara-button.groovy', 'version': 'v0.6.1.MMDD',
+        {'id': 1121, 'id_3': 0, 'file': 'zigbee-xiaomi-aqara-button-toggle-switch.groovy', 'version': 'v0.6.1.MMDD',
          'comment': 'Works with models WXKG01LM, WXKG11LM (2015), WXKG11LM (2018), WXKG12LM, WXKG02LM (2016 & 2018) & WXKG03LM (2016 & 2018)' },
         {'id': 1122, 'id_3': 0, 'file': 'zigbee-xiaomi-mijia-smart-light-sensor.groovy', 'version': 'v0.6.1.MMDD',
          'comment': 'Works with model GZCGQ01LM.' },
-
+        {'id': 1153, 'id_3': 0, 'file': 'zigbee-xiaomi-aqara-contact-sensor.groovy', 'version': 'v0.6.1.MMDD',
+         'comment': 'Works with model MCCGQ01LM & MCCGQ11LM.' },
+        {'id': 1154, 'id_3': 0, 'file': 'zigbee-xiaomi-aqara-motion-sensor.groovy', 'version': 'v0.6.1.MMDD',
+         'comment': 'Works with model RTCGQ01LM & RTCGQ11LM.' },
+        {'id': 1155, 'id_3': 0, 'file': 'zigbee-ihorn-motion-sensor.groovy', 'version': 'v0.6.1.MMDD',
+         'comment': 'Works with model LH-992ZB.' },
+        
+        
         # Virtual
         {'id': 962, 'file': 'javascript-injection-driver.groovy', 'version': 'v0.1.0.MMDDb' },
 
@@ -405,10 +412,16 @@ def main():
         #{'id': 867}, {'id': 868},  # Universal Drivers TESTING
         {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
         #{'id': 865}
-        {'id': 801}, #{'id': 579},  # Zigbee drivers
+        # Zigbee drivers :
+        {'id': 1153}, # Xiaomi/Aqara Contact Sensors
+        {'id': 1154}, # Xiaomi/Aqara Motion Sensors
+        {'id': 1155}, # iHorn Motion Sensor
+        {'id': 801}, #{'id': 579},  
         {'id': 1057}, # Testing - Get Driver Runtime Data
         {'id': 1121}, # Xiaomi/Aqara Button
         {'id': 1122}, # Xiaomi Mijia Smart Light Sensor
+        
+        
     #     {'id':587},  # Wifi Curtain Wall Panel
     #    {'id':590},
     #    {'id':651},    # Sensor - Distance

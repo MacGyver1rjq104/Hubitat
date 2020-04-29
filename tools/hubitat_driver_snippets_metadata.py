@@ -275,8 +275,8 @@ input(name: "presenceEnable", type: "bool", title: addTitleDiv("Enable Presence"
 def getMetadataPreferencesForZigbeeDevicesWithBattery():
     return '''
 // Preferences for Zigbee Devices with Battery
-input(name: "vMinSetting", type: "decimal", title: addTitleDiv("Battery Minimum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 0% (default = 2.6V)"), defaultValue: "2.6", range: "2.1..2.8")
-input(name: "vMaxSetting", type: "decimal", title: addTitleDiv("Battery Maximum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 100% (default = 3.1V)"), defaultValue: "3.1", range: "2.9..3.4")
+input(name: "vMinSetting", type: "decimal", title: addTitleDiv("Battery Minimum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 0% (default = 2.5V)"), defaultValue: "2.5", range: "2.1..2.8")
+input(name: "vMaxSetting", type: "decimal", title: addTitleDiv("Battery Maximum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 100% (default = 3.0V)"), defaultValue: "3.0", range: "2.9..3.4")
 '''
 
 def getDefaultMetadataPreferencesForParentDevicesWithUnlimitedChildren(numSwitches=1):

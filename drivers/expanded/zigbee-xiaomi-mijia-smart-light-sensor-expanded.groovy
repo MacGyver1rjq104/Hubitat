@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v0.6.1.0428
+ *  Version: v0.6.1.0429
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -67,7 +67,8 @@ metadata {
         //command "configureAdditional"
 
         // Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)
-        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"	}
+        fingerprint deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)", model: "lumi.sen_ill.mgl01", profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", endpointId: "01", deviceId: "0104"	
+    }
 
     preferences {
         // BEGIN:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
@@ -83,8 +84,8 @@ metadata {
         // END:  getDefaultMetadataPreferencesForZigbeeDevices()
         // BEGIN:getMetadataPreferencesForZigbeeDevicesWithBattery()
         // Preferences for Zigbee Devices with Battery
-        input(name: "vMinSetting", type: "decimal", title: addTitleDiv("Battery Minimum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 0% (default = 2.6V)"), defaultValue: "2.6", range: "2.1..2.8")
-        input(name: "vMaxSetting", type: "decimal", title: addTitleDiv("Battery Maximum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 100% (default = 3.1V)"), defaultValue: "3.1", range: "2.9..3.4")
+        input(name: "vMinSetting", type: "decimal", title: addTitleDiv("Battery Minimum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 0% (default = 2.5V)"), defaultValue: "2.5", range: "2.1..2.8")
+        input(name: "vMaxSetting", type: "decimal", title: addTitleDiv("Battery Maximum Voltage"), description: addDescriptionDiv("Voltage when battery is considered to be at 100% (default = 3.0V)"), defaultValue: "3.0", range: "2.9..3.4")
         // END:  getMetadataPreferencesForZigbeeDevicesWithBattery()
         input(name: "secondsMinLux", type: "number", title: addTitleDiv("Minimum Update Time"), description: addDescriptionDiv("Set the minimum number of seconds between Lux updates (5 to 3600, default: 10)"), defaultValue: "10", range: "5..3600")
 	}
@@ -111,11 +112,11 @@ ArrayList<String> refresh() {
     // https://docs.hubitat.com/index.php?title=Zigbee_Object
     // https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
     // https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf
-
+    
     getDriverVersion()
     configurePresence()
     setLogsOffTask(noLogWarning=true)
-
+    
     ArrayList<String> cmd = []
     //cmd += zigbee.readAttribute(0x001, 0)
     
@@ -249,7 +250,7 @@ ArrayList<String> parse(String description) {
         // Lux event Description:
         // read attr - raw: 5DF00104000A0000219F56, dni: 5DF0, endpoint: 01, cluster: 0400, size: 0A, attrId: 0000, encoding: 21, command: 0A, value: 9F56
     } else if(msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
-        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 1)
+        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 100)
         // Xiaomi/Aqara specific data structure, contains battery info
     } else if(msgMap["cluster"] == "0001" && msgMap["attrId"] == "0020") {
         logging("Battery voltage received - description:${description} | parseMap:${msgMap}", 1)
@@ -266,38 +267,6 @@ ArrayList<String> parse(String description) {
     return cmd
     // parse() Generic footer ENDS here
     // END:  getGenericZigbeeParseFooter(loglevel=0)
-}
-
-void parseButtonEvent(Map msgMap) {
-    Integer btn = Integer.parseInt(msgMap['value'], 16)
-    logging("parseButtonEvent() (btn: ${btn}, attrId: ${msgMap["attrId"]})", 1)
-    if(msgMap['attrId'] == '8000') {
-        // Multi-click event
-        btn = btn < 5 ? btn : 5
-        sendEvent(name:"pushed", value: btn, isStateChange: true, descriptionText: "Button was clicked $btn times")
-        if(btn == 2) sendEvent(name:"doubleTapped", value: 1, isStateChange: true, descriptionText: "Button 1 was double tapped")
-    } else {
-        // Single click event or held
-        if(btn == 0) {
-            // Button pressed down
-            sendEvent(name: "lastHoldEpoch", value: now(), isStateChange: true)
-        } else {
-            // Button released
-            Long lastHold = 0
-            String lastHoldEpoch = device.currentValue('lastHoldEpoch', true) 
-            if(lastHoldEpoch != null) lastHold = lastHoldEpoch.toLong()
-            sendEvent(name: "lastHoldEpoch", value: 0, isStateChange: true)
-            Long millisHeld = now() - lastHold
-            Long millisForHoldLong = millisForHold == null ? 1000 : millisForHold.toLong()
-            if(lastHold == 0) millisHeld = 0
-            logging("millisHeld = $millisHeld, millisForHold = $millisForHoldLong", 1)
-            if(millisHeld > millisForHoldLong) {
-                sendEvent(name:"held", value: 1, isStateChange: true, descriptionText: "Button 1 was held")
-            } else {
-                sendEvent(name:"pushed", value: 1, isStateChange: true, descriptionText: "Button 1 was held")
-            }
-        }
-    }
 }
 
 void updated() {
@@ -358,7 +327,7 @@ ArrayList<String> configureAdditional() {
 private String getDriverVersion() {
     comment = "Works with model GZCGQ01LM."
     if(comment != "") state.comment = comment
-    String version = "v0.6.1.0428"
+    String version = "v0.6.1.0429"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -628,6 +597,38 @@ void updateNeededSettings() {
     // Ignore, included for compatinility with the driver framework
 }
 
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeCommand(Integer cluster, Integer command, Map additionalParams, int delay = 2000, String... payload) {
+    ArrayList<String> cmd = zigbee.command(cluster, command, additionalParams, delay, payload)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeCommand() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeCommand(Integer cluster, Integer command, String... payload) {
+    ArrayList<String> cmd = zigbee.command(cluster, command, payload)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeCommand() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeWriteAttribute(Integer cluster, Integer attributeId, Integer dataType, Integer value, Map additionalParams = [:], int delay = 2000) {
+    ArrayList<String> cmd = zigbee.writeAttribute(cluster, attributeId, dataType, value, additionalParams, delay)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeWriteAttribute() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeReadAttribute(Integer cluster, Integer attributeId, Map additionalParams = [:], int delay = 2000) {
+    ArrayList<String> cmd = zigbee.readAttribute(cluster, attributeId, additionalParams, delay)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeReadAttribute() cmd=${cmd}", 0)
+    return cmd
+}
+
 ArrayList<String> zigbeeWriteLongAttribute(Integer cluster, Integer attributeId, Integer dataType, Long value, Map additionalParams = [:], int delay = 2000) {
     logging("zigbeeWriteLongAttribute()", 1)
     String mfgCode = ""
@@ -672,9 +673,20 @@ String setCleanModelName(String newModelToSet=null) {
     return newModel
 }
 
+boolean isValidDate(String dateFormat, String dateString) {
+    // TODO: Replace this with something NOT using try catch?
+    try {
+        Date.parse(dateFormat, dateString)
+    } catch (e) {
+        return false
+    }
+    return true
+}
+
 void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
     if (lastCheckinEnable == true || lastCheckinEnable == null) {
-        if(device.currentValue('lastCheckin') == null || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
+        String lastCheckinVal = device.currentValue('lastCheckin')
+        if(lastCheckinVal == null || isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == false || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
         } else {
@@ -693,8 +705,9 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 
 void checkPresence() {
     Long lastCheckinTime = null
-    if ((lastCheckinEnable == true || lastCheckinEnable == null) && device.currentValue('lastCheckin') != null) {
-        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
+    String lastCheckinVal = device.currentValue('lastCheckin')
+    if ((lastCheckinEnable == true || lastCheckinEnable == null) && isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == true) {
+        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime()
     } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
         lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
     }
@@ -714,8 +727,8 @@ void resetBatteryReplacedDate(boolean forced=true) {
 }
 
 void parseAndSendBatteryStatus(BigDecimal vCurrent) {
-    BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
-    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMaxSetting
+    BigDecimal vMin = vMinSetting == null ? 2.5 : vMinSetting
+    BigDecimal vMax = vMaxSetting == null ? 3.0 : vMaxSetting
     
     BigDecimal bat = 0
     if(vMax - vMin > 0) {

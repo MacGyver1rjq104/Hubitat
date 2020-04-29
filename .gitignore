@@ -13,3 +13,5 @@ hubitat_hubspider.cfg
 /hhs_10_3.cfg
 /__hubitat_session_id_3
 /__hubitat_checksums_id_3
+/drivers/OBSOLETE-tasmota-ykyc-001-pm-plug.groovy
+/drivers/expanded/testing-bare-minimum-driver-expanded.groovy

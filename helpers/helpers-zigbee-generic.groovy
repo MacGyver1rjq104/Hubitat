@@ -24,6 +24,38 @@ void updateNeededSettings() {
     // Ignore, included for compatinility with the driver framework
 }
 
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeCommand(Integer cluster, Integer command, Map additionalParams, int delay = 2000, String... payload) {
+    ArrayList<String> cmd = zigbee.command(cluster, command, additionalParams, delay, payload)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeCommand() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeCommand(Integer cluster, Integer command, String... payload) {
+    ArrayList<String> cmd = zigbee.command(cluster, command, payload)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeCommand() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeWriteAttribute(Integer cluster, Integer attributeId, Integer dataType, Integer value, Map additionalParams = [:], int delay = 2000) {
+    ArrayList<String> cmd = zigbee.writeAttribute(cluster, attributeId, dataType, value, additionalParams, delay)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeWriteAttribute() cmd=${cmd}", 0)
+    return cmd
+}
+
+// Used as a workaround to replace an incorrect endpoint
+ArrayList<String> zigbeeReadAttribute(Integer cluster, Integer attributeId, Map additionalParams = [:], int delay = 2000) {
+    ArrayList<String> cmd = zigbee.readAttribute(cluster, attributeId, additionalParams, delay)
+    cmd[0] = cmd[0].replace('0xnull', '0x01')
+    logging("zigbeeReadAttribute() cmd=${cmd}", 0)
+    return cmd
+}
+
 ArrayList<String> zigbeeWriteLongAttribute(Integer cluster, Integer attributeId, Integer dataType, Long value, Map additionalParams = [:], int delay = 2000) {
     logging("zigbeeWriteLongAttribute()", 1)
     String mfgCode = ""
@@ -68,9 +100,20 @@ String setCleanModelName(String newModelToSet=null) {
     return newModel
 }
 
+boolean isValidDate(String dateFormat, String dateString) {
+    // TODO: Replace this with something NOT using try catch?
+    try {
+        Date.parse(dateFormat, dateString)
+    } catch (e) {
+        return false
+    }
+    return true
+}
+
 void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
     if (lastCheckinEnable == true || lastCheckinEnable == null) {
-        if(device.currentValue('lastCheckin') == null || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
+        String lastCheckinVal = device.currentValue('lastCheckin')
+        if(lastCheckinVal == null || isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == false || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
         } else {
@@ -89,8 +132,9 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 
 void checkPresence() {
     Long lastCheckinTime = null
-    if ((lastCheckinEnable == true || lastCheckinEnable == null) && device.currentValue('lastCheckin') != null) {
-        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
+    String lastCheckinVal = device.currentValue('lastCheckin')
+    if ((lastCheckinEnable == true || lastCheckinEnable == null) && isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == true) {
+        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime()
     } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
         lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
     }
@@ -110,8 +154,8 @@ void resetBatteryReplacedDate(boolean forced=true) {
 }
 
 void parseAndSendBatteryStatus(BigDecimal vCurrent) {
-    BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
-    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMaxSetting
+    BigDecimal vMin = vMinSetting == null ? 2.5 : vMinSetting
+    BigDecimal vMax = vMaxSetting == null ? 3.0 : vMaxSetting
     
     BigDecimal bat = 0
     if(vMax - vMin > 0) {

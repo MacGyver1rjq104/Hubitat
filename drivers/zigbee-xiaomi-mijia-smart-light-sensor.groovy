@@ -26,7 +26,8 @@ metadata {
         //command "configureAdditional"
 
         // Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)
-        fingerprint profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", model: "lumi.sen_ill.mgl01", endpointId: "01", deviceId: "0104", deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)"	}
+        fingerprint deviceJoinName: "Xiaomi Mijia Smart Light Sensor (GZCGQ01LM)", model: "lumi.sen_ill.mgl01", profileId: "0104", inClusters: "0000,0400,0003,0001", outClusters: "0003", manufacturer: "LUMI", endpointId: "01", deviceId: "0104"	
+    }
 
     preferences {
         #!include:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
@@ -48,11 +49,11 @@ ArrayList<String> refresh() {
     // https://docs.hubitat.com/index.php?title=Zigbee_Object
     // https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
     // https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf
-
+    
     getDriverVersion()
     configurePresence()
     setLogsOffTask(noLogWarning=true)
-
+    
     ArrayList<String> cmd = []
     //cmd += zigbee.readAttribute(0x001, 0)
     
@@ -168,7 +169,7 @@ ArrayList<String> parse(String description) {
         // Lux event Description:
         // read attr - raw: 5DF00104000A0000219F56, dni: 5DF0, endpoint: 01, cluster: 0400, size: 0A, attrId: 0000, encoding: 21, command: 0A, value: 9F56
     } else if(msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
-        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 1)
+        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 100)
         // Xiaomi/Aqara specific data structure, contains battery info
     } else if(msgMap["cluster"] == "0001" && msgMap["attrId"] == "0020") {
         logging("Battery voltage received - description:${description} | parseMap:${msgMap}", 1)
@@ -180,38 +181,6 @@ ArrayList<String> parse(String description) {
 	}
     
     #!include:getGenericZigbeeParseFooter(loglevel=0)
-}
-
-void parseButtonEvent(Map msgMap) {
-    Integer btn = Integer.parseInt(msgMap['value'], 16)
-    logging("parseButtonEvent() (btn: ${btn}, attrId: ${msgMap["attrId"]})", 1)
-    if(msgMap['attrId'] == '8000') {
-        // Multi-click event
-        btn = btn < 5 ? btn : 5
-        sendEvent(name:"pushed", value: btn, isStateChange: true, descriptionText: "Button was clicked $btn times")
-        if(btn == 2) sendEvent(name:"doubleTapped", value: 1, isStateChange: true, descriptionText: "Button 1 was double tapped")
-    } else {
-        // Single click event or held
-        if(btn == 0) {
-            // Button pressed down
-            sendEvent(name: "lastHoldEpoch", value: now(), isStateChange: true)
-        } else {
-            // Button released
-            Long lastHold = 0
-            String lastHoldEpoch = device.currentValue('lastHoldEpoch', true) 
-            if(lastHoldEpoch != null) lastHold = lastHoldEpoch.toLong()
-            sendEvent(name: "lastHoldEpoch", value: 0, isStateChange: true)
-            Long millisHeld = now() - lastHold
-            Long millisForHoldLong = millisForHold == null ? 1000 : millisForHold.toLong()
-            if(lastHold == 0) millisHeld = 0
-            logging("millisHeld = $millisHeld, millisForHold = $millisForHoldLong", 1)
-            if(millisHeld > millisForHoldLong) {
-                sendEvent(name:"held", value: 1, isStateChange: true, descriptionText: "Button 1 was held")
-            } else {
-                sendEvent(name:"pushed", value: 1, isStateChange: true, descriptionText: "Button 1 was held")
-            }
-        }
-    }
 }
 
 void updated() {
