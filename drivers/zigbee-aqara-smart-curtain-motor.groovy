@@ -86,6 +86,7 @@ ArrayList<String> refresh() {
 void initializeAdditional() {
     logging("initializeAdditional()", 100)
     setCleanModelName()
+    updateDataValue("endpointId", "01")
     makeSchedule()
     getDriverVersion()
 }
