@@ -206,6 +206,7 @@ ArrayList<String> parse(String description) {
             if(getDeviceDataByName('model') != "lumi.curtain" && msgMap["command"] == "0A" && curtainPosition == 0) {
                 logging("Sending a request for the actual position...", 1)
                 cmd += zigbee.readAttribute(CLUSTER_WINDOW_POSITION, 0x0055)
+
             } else {
                 logging("SETTING POSITION: long => ${theValue}, BigDecimal => ${floatValue}", 1)
                 positionEvent(curtainPosition)
@@ -297,7 +298,7 @@ ArrayList<String> off() {
 ArrayList<String> reverseCurtain() {
     logging("reverseCurtain()", 1)
 	ArrayList<String> cmd = []
-	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01, [mfgCode: "0x115F"])
+	cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01, [mfgCode: "0x115F"])
     logging("cmd=${cmd}", 1)
     return cmd
 }
@@ -308,7 +309,7 @@ ArrayList<String> manualOpenEnable() {
     if(getDeviceDataByName('model') == "lumi.curtain") {
         cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, 0x0700080000040012, [mfgCode: "0x115F"])
     } else {
-        cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x00, [mfgCode: "0x115F"])
+        cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x00, [mfgCode: "0x115F"])
     }
     logging("manualOpenEnable cmd=${cmd}", 0)
     return cmd
@@ -320,7 +321,7 @@ ArrayList<String> manualOpenDisable() {
     if(getDeviceDataByName('model') == "lumi.curtain") {
         cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, 0x0700080000040112, [mfgCode: "0x115F"])
     } else {
-        cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x115F"])
+        cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x115F"])
     }
     logging("manualOpenDisable cmd=${cmd}", 0)
     return cmd
@@ -332,7 +333,7 @@ ArrayList<String> curtainOriginalDirection() {
     if(getDeviceDataByName('model') == "lumi.curtain") {
         cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, 0x0700020000040012, [mfgCode: "0x115F"])
     } else {
-        cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x00, [mfgCode: "0x115F"])
+        cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x00, [mfgCode: "0x115F"])
     }
     logging("curtainOriginalDirection cmd=${cmd}", 0)
     return cmd
@@ -344,7 +345,7 @@ ArrayList<String> curtainReverseDirection() {
     if(getDeviceDataByName('model') == "lumi.curtain") {
         cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, 0x0700020001040012, [mfgCode: "0x115F"])
     } else {
-        cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01, [mfgCode: "0x115F"])
+        cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF28, 0x10, 0x01, [mfgCode: "0x115F"])
     }
     logging("curtainReverseDirection cmd=${cmd}", 0)
     return cmd
@@ -356,7 +357,7 @@ ArrayList<String> trackDiscoveryMode() {
     if(getDeviceDataByName('model') == "lumi.curtain") {
         cmd += zigbeeWriteLongAttribute(CLUSTER_BASIC, 0x0401, 0x42, 0x0700010000040012, [mfgCode: "0x115F"])
     } else {
-        cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF27, 0x10, 0x00, [mfgCode: "0x115F"])
+        cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF27, 0x10, 0x00, [mfgCode: "0x115F"])
     }
     logging("trackDiscoveryMode cmd=${cmd}", 0)
     return cmd
@@ -365,9 +366,7 @@ ArrayList<String> trackDiscoveryMode() {
 ArrayList<String> stop() {
     logging("stop()", 1)
     ArrayList<String> cmd = []
-
-	cmd = zigbee.command(CLUSTER_WINDOW_COVERING, COMMAND_PAUSE)
-    cmd[0] = cmd[0].replace('0xnull', '0x01')
+	cmd += zigbeeCommand(CLUSTER_WINDOW_COVERING, COMMAND_PAUSE)
     logging("stop cmd=${cmd}", 0)
     return cmd
 }
@@ -375,7 +374,7 @@ ArrayList<String> stop() {
 ArrayList<String> enableAutoClose() {
     logging("enableAutoClose()", 1)
     ArrayList<String> cmd = []
-	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x00, [mfgCode: "0x115F"])
+	cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x00, [mfgCode: "0x115F"])
     logging("enableAutoClose cmd=${cmd}", 0)
     return cmd
 }
@@ -383,7 +382,7 @@ ArrayList<String> enableAutoClose() {
 ArrayList<String> disableAutoClose() {
     logging("disableAutoClose()", 1)
     ArrayList<String> cmd = []
-	cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x115F"])
+	cmd += zigbeeWriteAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x115F"])
     logging("disableAutoClose cmd=${cmd}", 0)
     return cmd
 }
@@ -404,18 +403,15 @@ void setPosition(position) {
     if(position == 100 && getDeviceDataByName('model') == "lumi.curtain") {
         logging("Command: Open", 1)
         logging("cluster: ${CLUSTER_ON_OFF}, command: ${COMMAND_OPEN}", 0)
-        cmd = zigbee.command(CLUSTER_ON_OFF, COMMAND_CLOSE)
-        cmd[0] = cmd[0].replace('0xnull', '0x01')
+        cmd += zigbeeCommand(CLUSTER_ON_OFF, COMMAND_CLOSE)
     } else if(position < 1 && getDeviceDataByName('model') == "lumi.curtain") {
         logging("Command: Close", 1)
         logging("cluster: ${CLUSTER_ON_OFF}, command: ${COMMAND_CLOSE}", 0)
-        cmd = zigbee.command(CLUSTER_ON_OFF, COMMAND_OPEN)
-        cmd[0] = cmd[0].replace('0xnull', '0x01')
+        cmd += zigbeeCommand(CLUSTER_ON_OFF, COMMAND_OPEN)
     } else {
         logging("Set Position: ${position}%", 1)
         //logging("zigbee.writeAttribute(getCLUSTER_WINDOW_POSITION()=${CLUSTER_WINDOW_POSITION}, getPOSITION_ATTR_VALUE()=${POSITION_ATTR_VALUE}, getENCODING_SIZE()=${ENCODING_SIZE}, position=${Float.floatToIntBits(position)})", 1)
-        cmd = zigbee.writeAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE, ENCODING_SIZE, Float.floatToIntBits(position))
-        cmd[0] = cmd[0].replace('0xnull', '0x01')
+        cmd += zigbeeWriteAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE, ENCODING_SIZE, Float.floatToIntBits(position))
     }
     logging("cmd=${cmd}", 1)
     sendZigbeeCommands(cmd)
@@ -439,8 +435,7 @@ ArrayList<String> setLevel(level, duration) {
 ArrayList<String> getPosition() {
     logging("getPosition()", 1)
 	ArrayList<String> cmd = []
-	cmd = zigbee.readAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
-    cmd[0] = cmd[0].replace('0xnull', '0x01')
+	cmd += zigbeeReadAttribute(CLUSTER_WINDOW_POSITION, POSITION_ATTR_VALUE)
     logging("cmd: $cmd", 1)
     return cmd
 }
@@ -448,12 +443,9 @@ ArrayList<String> getPosition() {
 ArrayList<String> getBattery() {
     logging("getBattery()", 100)
 	ArrayList<String> cmd = []
-    cmd = zigbee.readAttribute(CLUSTER_POWER, POWER_ATTR_BATTERY_PERCENTAGE_REMAINING)
-    cmd[0] = cmd[0].replace('0xnull', '0x01')
-    ArrayList<String> cmd2 = zigbee.readAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
-    cmd2[0] = cmd2[0].replace('0xnull', '0x01')
-    cmd += cmd2
-	logging("cmd: $cmd", 1)
+    cmd += zigbeeReadAttribute(CLUSTER_POWER, POWER_ATTR_BATTERY_PERCENTAGE_REMAINING)
+    cmd += zigbeeReadAttribute(CLUSTER_BASIC, BASIC_ATTR_POWER_SOURCE)
+    logging("cmd: $cmd", 1)
     return cmd 
 }
 
