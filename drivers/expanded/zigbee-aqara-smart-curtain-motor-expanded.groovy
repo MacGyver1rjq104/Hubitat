@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0428
+ *  Version: v1.0.1.0429
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,20 +76,18 @@ metadata {
         //command "parse", [[name:"Description*", type: "STRING", description: "description"]]
 
         // Aqara Smart Curtain Motor (ZNCLDJ11LM)
-        fingerprint profileId: "0104", inClusters: "0000,0004,0003,0005,000A,0102,000D,0013,0006,0001,0406", outClusters: "0019,000A,000D,0102,0013,0006,0001,0406", manufacturer: "LUMI", model: "lumi.curtain"
+        fingerprint profileId: "0104", endpointId: "01", inClusters: "0000,0004,0003,0005,000A,0102,000D,0013,0006,0001,0406", outClusters: "0019,000A,000D,0102,0013,0006,0001,0406", manufacturer: "LUMI", model: "lumi.curtain"
         
         // Aqara B1 Smart Curtain Motor (ZNCLDJ12LM)
 		fingerprint endpointId: "01", profileId: "0104", deviceId: "0202", inClusters: "0000, 0003, 0102, 000D, 0013, 0001", outClusters: "0003, 000A", manufacturer: "LUMI", model: "lumi.curtain.hagl04", deviceJoinName: "Xiaomi Curtain B1"
 	}
 
     preferences {
-        // BEGIN:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=True)
+        // BEGIN:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
         // Default Preferences
-        input(name: "runReset", description: addDescriptionDiv("DISABLE BEFORE RELEASE"), title: addTitleDiv("DISABLE BEFORE RELEASE"))
-        
         input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: ""  + getDefaultCSS(), defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
-        // END:  getDefaultMetadataPreferences(includeCSS=True, includeRunReset=True)
+        // END:  getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
         // BEGIN:getDefaultMetadataPreferencesForZigbeeDevices()
         // Default Preferences for Zigbee Devices
         input(name: "lastCheckinEnable", type: "bool", title: addTitleDiv("Enable Last Checkin Date"), description: addDescriptionDiv("Records Date events if enabled"), defaultValue: true)
@@ -198,7 +196,7 @@ ArrayList<String> parse(String description) {
         logging("RAW: ${msgMap["attrId"]}", 0)
         // Heartbeat event Description:
         // catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000
-    
+
         // parseMap:[raw:catchall: 0104 000A 01 01 0040 00 63A1 00 00 0000 00 00 0000, profileId:0104, clusterId:000A, clusterInt:10, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:63A1, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[00, 00]]
     } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0404") {
         if(msgMap["command"] == "0A") {
@@ -224,6 +222,15 @@ ArrayList<String> parse(String description) {
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
         refresh()
+    } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0006") {
+        logging("Got a date - description:${description} | parseMap:${msgMap}", 1)
+        // Sends a date, maybe product release date since it is the same on different devices?
+        
+        // This is sent when entering Track Discovery Mode
+
+        // Original Curtain Description:
+        // read attr - raw: 25D80100001C0600420A30382D31332D32303138, dni: 25D8, endpoint: 01, cluster: 0000, size: 1C, attrId: 0006, encoding: 42, command: 0A, value: 0A30382D31332D32303138
+        // msgMap:[raw:25D80100001C0600420A30382D31332D32303138, dni:25D8, endpoint:01, cluster:0000, size:1C, attrId:0006, encoding:42, command:0A, value:08-13-2018, clusterInt:0, attrInt:6]
     } else if(msgMap["cluster"] == "0000" && msgMap["attrId"] == "0007") {
         logging("Handled KNOWN event (BASIC_ATTR_POWER_SOURCE) - description:${description} | parseMap:${msgMap}", 1)
         if(msgMap["value"] == "03") {
@@ -251,10 +258,13 @@ ArrayList<String> parse(String description) {
             msgMap["encoding"] = "42"
             msgMap["value"] = parseXiaomiStruct(msgMap["value"], isFCC0=false)
         }
-        logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 100)
+        logging("KNOWN event (Xiaomi/Aqara specific data structure) - description:${description} | parseMap:${msgMap}", 0)
         // Xiaomi/Aqara specific data structure, contains data we probably don't need
-        // FF01 event Description:
+        // FF01 event Description from Original Curtain:
         // read attr - raw: A5C50100004001FF421C03281F05212B00642058082120110727000000000000000009210304, dni: A5C5, endpoint: 01, cluster: 0000, size: 40, attrId: FF01, encoding: 42, command: 0A, value: 1C03281F05212B00642058082120110727000000000000000009210304
+        
+        // read attr - raw: 25D80100004001FF421C03281E05212F00642064082120110727000000000000000009210104, dni: 25D8, endpoint: 01, cluster: 0000, size: 40, attrId: FF01, encoding: 42, command: 0A, value: 1C03281E05212F00642064082120110727000000000000000009210104
+        // parseMap:[raw:25D80100004001FF421C03281E05212F00642064082120110727000000000000000009210104, dni:25D8, endpoint:01, cluster:0000, size:40, attrId:FF01, encoding:41, command:0A, value:[raw:[deviceTemperature:1E, RSSI_dB:002F, curtainPosition:64, unknown3:1120, unknown2:0000000000000000, unknown4:0401], deviceTemperature:30, RSSI_dB:47, curtainPosition:100, unknown3:4384, unknown2:0, unknown4:1025], clusterInt:0, attrInt:65281]
     } else if(msgMap["cluster"] == "000D" && msgMap["attrId"] == "0055") {
         logging("cluster 000D", 1)
 		if(msgMap["size"] == "16" || msgMap["size"] == "1C" || msgMap["size"] == "10") {
@@ -527,7 +537,7 @@ ArrayList<String> getBattery() {
 private String getDriverVersion() {
     comment = "Works with models ZNCLDJ11LM & ZNCLDJ12LM"
     if(comment != "") state.comment = comment
-    String version = "v1.0.1.0428"
+    String version = "v1.0.1.0429"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -841,9 +851,20 @@ String setCleanModelName(String newModelToSet=null) {
     return newModel
 }
 
+boolean isValidDate(String dateFormat, String dateString) {
+    // TODO: Replace this with something NOT using try catch?
+    try {
+        Date.parse(dateFormat, dateString)
+    } catch (e) {
+        return false
+    }
+    return true
+}
+
 void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
     if (lastCheckinEnable == true || lastCheckinEnable == null) {
-        if(device.currentValue('lastCheckin') == null || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
+        String lastCheckinVal = device.currentValue('lastCheckin')
+        if(lastCheckinVal == null || isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == false || now() >= Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime() + (minimumMinutesToRepeat * 60 * 1000)) {
 		    sendEvent(name: "lastCheckin", value: new Date().format('yyyy-MM-dd HH:mm:ss'))
             logging("Updated lastCheckin", 1)
         } else {
@@ -862,8 +883,9 @@ void sendlastCheckinEvent(Integer minimumMinutesToRepeat=55) {
 
 void checkPresence() {
     Long lastCheckinTime = null
-    if ((lastCheckinEnable == true || lastCheckinEnable == null) && device.currentValue('lastCheckin') != null) {
-        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', device.currentValue('lastCheckin')).getTime()
+    String lastCheckinVal = device.currentValue('lastCheckin')
+    if ((lastCheckinEnable == true || lastCheckinEnable == null) && isValidDate('yyyy-MM-dd HH:mm:ss', lastCheckinVal) == true) {
+        lastCheckinTime = Date.parse('yyyy-MM-dd HH:mm:ss', lastCheckinVal).getTime()
     } else if (lastCheckinEpochEnable == true && device.currentValue('lastCheckinEpoch') != null) {
         lastCheckinTime = device.currentValue('lastCheckinEpoch').toLong()
     }
@@ -883,8 +905,8 @@ void resetBatteryReplacedDate(boolean forced=true) {
 }
 
 void parseAndSendBatteryStatus(BigDecimal vCurrent) {
-    BigDecimal vMin = vMinSetting == null ? 2.6 : vMinSetting
-    BigDecimal vMax = vMaxSetting == null ? 3.1 : vMaxSetting
+    BigDecimal vMin = vMinSetting == null ? 2.5 : vMinSetting
+    BigDecimal vMax = vMaxSetting == null ? 3.0 : vMaxSetting
     
     BigDecimal bat = 0
     if(vMax - vMin > 0) {
