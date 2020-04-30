@@ -89,7 +89,7 @@ void installed() {
     device.removeSetting("logLevel")
     device.updateSetting("logLevel", "100")
     sendEvent(name: "colorMode", value: "CT")
-    sendEvent(name: "colorTemp", value: "3000")
+    sendEvent(name: "colorTemperature", value: "3000")
     sendEvent(name: "hue", value: "0")
     sendEvent(name: "saturation", value: "0")
     sendEvent(name: "level", value: "100")

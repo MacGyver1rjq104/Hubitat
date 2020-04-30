@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0428Tb
+ *  Version: v1.0.1.0430Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ void installed() {
     device.removeSetting("logLevel")
     device.updateSetting("logLevel", "100")
     sendEvent(name: "colorMode", value: "CT")
-    sendEvent(name: "colorTemp", value: "3000")
+    sendEvent(name: "colorTemperature", value: "3000")
     sendEvent(name: "hue", value: "0")
     sendEvent(name: "saturation", value: "0")
     sendEvent(name: "level", value: "100")
@@ -449,7 +449,7 @@ backlog
 private String getDriverVersion() {
     comment = ""
     if(comment != "") state.comment = comment
-    String version = "v1.0.1.0428Tb"
+    String version = "v1.0.1.0430Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
