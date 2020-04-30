@@ -128,6 +128,8 @@ def main():
     # to call by the include tags in the .groovy files when we process them
     cb = HubitatCodeBuilderTasmota(hhs, calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
                 app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
+    cb_2 = HubitatCodeBuilderTasmota(hhs_2, id_name='id_2', calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
+                app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
     cb_3 = HubitatCodeBuilderTasmota(hhs_3, id_name='id_3', calling_namespace=sys.modules[__name__], driver_raw_repo_url=base_raw_repo_url,
                 app_raw_repo_url=app_raw_repo_url, default_version='v1.0.1.MMDDTb')
     cb_private = HubitatCodeBuilderTasmota(hhs, calling_namespace=sys.modules[__name__], app_dir=Path('./private/apps'), 
@@ -349,7 +351,10 @@ def main():
          'comment': 'Works with model RTCGQ01LM & RTCGQ11LM.' },
         {'id': 1155, 'id_3': 0, 'file': 'zigbee-ihorn-motion-sensor.groovy', 'version': 'v0.6.1.MMDD',
          'comment': 'Works with model LH-992ZB.' },
-        
+        {'id': 1185, 'id_3': 0, 'file': 'zigbee-xiaomi-aqara-plug-outlet.groovy', 'version': 'v0.6.1.MMDD',
+         'comment': 'Works with model ZNCZ02LM & QBCZ11LM.' },
+        {'id': 1186, 'id_2': 334, 'id_3': 0, 'file': 'zigbee-aqara-bulb.groovy', 'version': 'v0.6.1.MMDD',
+         'comment': 'Works with model ZNLDP12LM.' },
         
         # Virtual
         {'id': 962, 'file': 'javascript-injection-driver.groovy', 'version': 'v0.1.0.MMDDb' },
@@ -413,6 +418,8 @@ def main():
         {'id': 865}, {'id': 866}, # Universal Drivers RELEASE
         #{'id': 865}
         # Zigbee drivers :
+        {'id': 1186}, # Aqara Bulb
+        {'id': 1185}, # Xiaomi/Aqara Plug/Outlet
         {'id': 1153}, # Xiaomi/Aqara Contact Sensors
         {'id': 1154}, # Xiaomi/Aqara Motion Sensors
         {'id': 1155}, # iHorn Motion Sensor
@@ -448,6 +455,11 @@ def main():
     driver_files_private_active = [
         #{'id': 866},
     ]
+    driver_files_active_2 = [
+        {'id': 1186}, # Aqara Bulb
+        #{'id': 801}, {'id': 547},
+        #{'id': 865}, {'id': 866}, # Universal Drivers RELEASE
+    ]
     driver_files_active_3 = [
         #{'id': 801}, {'id': 547},
         #{'id': 865}, {'id': 866}, # Universal Drivers RELEASE
@@ -455,6 +467,7 @@ def main():
     expected_num_drivers = 1
 
     driver_files_active = getExpandedDriverList(driver_files_active, driver_files)
+    driver_files_active_2 = getExpandedDriverList(driver_files_active_2, driver_files)
     driver_files_active_3 = getExpandedDriverList(driver_files_active_3, driver_files)
 
     #driver_files_private_active = getExpandedDriverList(driver_files_private_active, driver_files)
@@ -477,8 +490,8 @@ def main():
     child_drivers = []
     print(driver_files_active_3)
 
+    used_driver_list_2 = cb_2.expandGroovyFilesAndPush(driver_files_active_2, code_type='driver')
     used_driver_list_3 = cb_3.expandGroovyFilesAndPush(driver_files_active_3, code_type='driver')
-
     # The main target needs to be last to keep everything in a consistent state
     used_driver_list = cb.expandGroovyFilesAndPush(driver_files_active, code_type='driver')
     #used_driver_list_private = cb_private.expandGroovyFilesAndPush(driver_files_private_active, code_type='driver')
@@ -721,6 +734,11 @@ def main():
     else:
         log.info('No new drivers were created!')
     log.info('This many drivers were UPDATED: {}'.format(cb.driver_num_updated))
+    
+    if(len(cb_2.driver_new)>0):
+        log.warning('These new drivers were created on 10.2: \n{}'.format(cb_2.driver_new))
+    else:
+        log.info('No new drivers were created on 10.2!')
 
     if(len(cb_3.driver_new)>0):
         log.warning('These new drivers were created on 10.3: \n{}'.format(cb_3.driver_new))
@@ -771,11 +789,11 @@ def main():
     #cb.hubitat_hubspider.get_app_list()
 
     cb.saveChecksums()
-    #cb_2.saveChecksums()
+    cb_2.saveChecksums()
     cb_3.saveChecksums()
     cb_private.saveChecksums(checksum_file='./private/__hubitat_checksums')
     hhs.save_session()
-    #hhs_2.save_session()
+    hhs_2.save_session()
     hhs_3.save_session()
 
 if(Path('DEVELOPER').exists()):

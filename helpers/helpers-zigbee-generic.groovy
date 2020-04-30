@@ -396,7 +396,7 @@ Map parseXiaomiStruct(String xiaomiStruct, boolean isFCC0=false, boolean hasLeng
             case 0x39:
                 // FLOAT - Single Precision
                 r["raw"][cKey] = values.take(4).reverse().join()
-                r[cKey] = Float.intBitsToFloat(Long.valueOf(r["raw"][cKey], 16).intValue())
+                r[cKey] = parseSingleHexToFloat(r["raw"][cKey])
                 values = values.drop(4)
                 break
             default:
@@ -405,6 +405,10 @@ Map parseXiaomiStruct(String xiaomiStruct, boolean isFCC0=false, boolean hasLeng
     }
     logging("Values: $r", 0)
     return r
+}
+
+Float parseSingleHexToFloat(String singleHex) {
+    return Float.intBitsToFloat(Long.valueOf(singleHex, 16).intValue())
 }
 
 Integer convertToSignedInt8(Integer signedByte) {
@@ -418,6 +422,39 @@ Integer parseIntReverseHex(String hexString) {
 
 Long parseLongReverseHex(String hexString) {
     return Long.parseLong(hexString.split("(?<=\\G..)").reverse().join(), 16)
+}
+
+String integerToHexString(BigDecimal value, Integer minBytes, boolean reverse=false) {
+    return integerToHexString(value.intValue(), minBytes, reverse=reverse)
+}
+
+String integerToHexString(Integer value, Integer minBytes, boolean reverse=false) {
+    if(reverse == true) {
+        return HexUtils.integerToHexString(value, minBytes).split("(?<=\\G..)").reverse().join()
+    } else {
+        return HexUtils.integerToHexString(value, minBytes)
+    }
+    
+}
+
+Integer miredToKelvin(Integer mired) {
+    Integer t = mired
+    if(t < 153) t = 153
+    if(t > 500) t = 500
+    t = Math.round(1000000/t)
+    if(t > 6536) t = 6536
+    if(t < 2000) t = 2000
+    return t
+}
+
+Integer kelvinToMired(Integer kelvin) {
+    Integer t = kelvin
+    if(t > 6536) t = 6536
+    if(t < 2000) t = 2000
+    t = Math.round(1000000/t)
+    if(t < 153) t = 153
+    if(t > 500) t = 500
+    return t
 }
 
 void configurePresence() {

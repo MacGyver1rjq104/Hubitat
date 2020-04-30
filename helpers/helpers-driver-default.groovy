@@ -14,7 +14,7 @@ void refresh(cmd) {
 }
 // Call order: installed() -> configure() -> updated() -> initialize() -> refresh()
 // Calls installed() -> [configure() -> [updateNeededSettings(), updated() -> [updatedAdditional(), initialize() -> refresh() -> refreshAdditional()], installedAdditional()]
-void installed() {
+def installed() {
 	logging("installed()", 100)
     
     try {
@@ -23,7 +23,7 @@ void installed() {
     } catch (MissingMethodException e) {
         // ignore
     }
-	configure()
+	//configure()
     try {
         // In case we have some more to run specific to this Driver
         installedAdditional()

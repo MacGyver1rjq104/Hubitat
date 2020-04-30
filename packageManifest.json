@@ -2,7 +2,7 @@
   "packageName": "Tasmota for Hubitat Elevation",
   "minimumHEVersion": "2.1.7",
   "author": "Markus",
-  "dateReleased": "2020-04-28",
+  "dateReleased": "2020-04-30",
   "documentationLink": "https://github.com/markus-li/Hubitat/wiki",
   "apps": [
     {
@@ -21,7 +21,7 @@
       "id": "daf8333a-3b78-5ad0-af46-188e1cdd32ba",
       "internalId": 865,
       "name": "Tasmota - Universal Parent",
-      "version": "v1.0.1.0428Tb",
+      "version": "v1.0.1.0429Tb",
       "namespace": "tasmota",
       "location": "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-parent-expanded.groovy",
       "required": true
@@ -39,7 +39,7 @@
       "id": "2152cf0b-a0ba-5ebf-a648-16b577ef7011",
       "internalId": 577,
       "name": "Tasmota - Universal CT/RGB/RGB+CW+WW (Child)",
-      "version": "v1.0.1.0428Tb",
+      "version": "v1.0.1.0430Tb",
       "namespace": "tasmota",
       "location": "https://raw.githubusercontent.com/markus-li/Hubitat/development/drivers/expanded/tasmota-universal-ct-rgb-cw-ww-child-expanded.groovy",
       "required": false
