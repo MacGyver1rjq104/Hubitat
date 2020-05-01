@@ -86,7 +86,8 @@ ArrayList<String> refresh() {
 void initializeAdditional() {
     logging("initializeAdditional()", 100)
     setCleanModelName()
-    updateDataValue("endpointId", "01")
+    // Setting endpointId doesn't help
+    //updateDataValue("endpointId", "01")
     makeSchedule()
     getDriverVersion()
 }

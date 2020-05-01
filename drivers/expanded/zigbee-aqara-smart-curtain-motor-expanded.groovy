@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0429
+ *  Version: v1.0.1.0501
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ metadata {
     preferences {
         // BEGIN:getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
         // Default Preferences
-        input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: ""  + getDefaultCSS(), defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: ""  + getDefaultCSS(), defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
         input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultMetadataPreferences(includeCSS=True, includeRunReset=False)
         // BEGIN:getDefaultMetadataPreferencesForZigbeeDevices()
@@ -139,7 +139,8 @@ ArrayList<String> refresh() {
 void initializeAdditional() {
     logging("initializeAdditional()", 100)
     setCleanModelName()
-    updateDataValue("endpointId", "01")
+    // Setting endpointId doesn't help
+    //updateDataValue("endpointId", "01")
     makeSchedule()
     getDriverVersion()
 }
@@ -539,7 +540,7 @@ ArrayList<String> getBattery() {
 private String getDriverVersion() {
     comment = "Works with models ZNCLDJ11LM & ZNCLDJ12LM"
     if(comment != "") state.comment = comment
-    String version = "v1.0.1.0429"
+    String version = "v1.0.1.0501"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -558,7 +559,7 @@ private boolean logging(message, level) {
     if (infoLogging == null || infoLogging == true) {
         logLevelLocal = 100
     }
-    if (debugLogging == null || debugLogging == true) {
+    if (debugLogging == true) {
         logLevelLocal = 1
     }
     //}
@@ -649,7 +650,7 @@ void deviceCommand(cmd) {
 
 void setLogsOffTask(boolean noLogWarning=false) {
     // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(noLogWarning==false) {
             if(runReset != "DEBUG") {
                 log.warn "Debug logging will be disabled in 30 minutes..."
@@ -1181,7 +1182,7 @@ Map parseXiaomiStruct(String xiaomiStruct, boolean isFCC0=false, boolean hasLeng
             case 0x39:
                 // FLOAT - Single Precision
                 r["raw"][cKey] = values.take(4).reverse().join()
-                r[cKey] = Float.intBitsToFloat(Long.valueOf(r["raw"][cKey], 16).intValue())
+                r[cKey] = parseSingleHexToFloat(r["raw"][cKey])
                 values = values.drop(4)
                 break
             default:
@@ -1190,6 +1191,10 @@ Map parseXiaomiStruct(String xiaomiStruct, boolean isFCC0=false, boolean hasLeng
     }
     logging("Values: $r", 0)
     return r
+}
+
+Float parseSingleHexToFloat(String singleHex) {
+    return Float.intBitsToFloat(Long.valueOf(singleHex, 16).intValue())
 }
 
 Integer convertToSignedInt8(Integer signedByte) {
@@ -1203,6 +1208,39 @@ Integer parseIntReverseHex(String hexString) {
 
 Long parseLongReverseHex(String hexString) {
     return Long.parseLong(hexString.split("(?<=\\G..)").reverse().join(), 16)
+}
+
+String integerToHexString(BigDecimal value, Integer minBytes, boolean reverse=false) {
+    return integerToHexString(value.intValue(), minBytes, reverse=reverse)
+}
+
+String integerToHexString(Integer value, Integer minBytes, boolean reverse=false) {
+    if(reverse == true) {
+        return HexUtils.integerToHexString(value, minBytes).split("(?<=\\G..)").reverse().join()
+    } else {
+        return HexUtils.integerToHexString(value, minBytes)
+    }
+    
+}
+
+Integer miredToKelvin(Integer mired) {
+    Integer t = mired
+    if(t < 153) t = 153
+    if(t > 500) t = 500
+    t = Math.round(1000000/t)
+    if(t > 6536) t = 6536
+    if(t < 2000) t = 2000
+    return t
+}
+
+Integer kelvinToMired(Integer kelvin) {
+    Integer t = kelvin
+    if(t > 6536) t = 6536
+    if(t < 2000) t = 2000
+    t = Math.round(1000000/t)
+    if(t < 153) t = 153
+    if(t > 500) t = 500
+    return t
 }
 
 void configurePresence() {
@@ -1304,7 +1342,7 @@ void refresh(cmd) {
 }
 // Call order: installed() -> configure() -> updated() -> initialize() -> refresh()
 // Calls installed() -> [configure() -> [updateNeededSettings(), updated() -> [updatedAdditional(), initialize() -> refresh() -> refreshAdditional()], installedAdditional()]
-void installed() {
+def installed() {
 	logging("installed()", 100)
     
     try {
@@ -1313,7 +1351,7 @@ void installed() {
     } catch (MissingMethodException e) {
         // ignore
     }
-	configure()
+	//configure()
     try {
         // In case we have some more to run specific to this Driver
         installedAdditional()
