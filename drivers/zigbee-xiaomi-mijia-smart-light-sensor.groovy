@@ -105,14 +105,29 @@ ArrayList<String> parse(String description) {
         logging("CONFIGURE CONFIRMATION - description: ${description} | parseMap:${msgMap}", 0)
         // catchall: 0000 8021 00 00 0040 00 5DF0 00 00 0000 00 00 9000
         // catchall: 0000 8021 00 00 0040 00 5DF0 00 00 0000 00 00 9100
+        if(msgMap["data"] != []) {
+            logging("Received BIND Confirmation with sequence number 0x${msgMap["data"][0]} (a total of FOUR unique numbers expected, same number may repeat).", 100)
+        }
+    } else if(msgMap["clusterId"] == "8034") {
+        logging("CLUSTER LEAVE REQUEST - description: ${description} | parseMap:${msgMap}", 0)
     } else if(msgMap["clusterId"] == "0013") {
-        logging("Unhandled event - description: ${description} | parseMap:${msgMap}", 0)
+        logging("Pairing event - description: ${description} | parseMap:${msgMap}", 1)
+        sendZigbeeCommands(configureAdditional())
+        refresh()
         // Getting this during install:
         // catchall: 0000 0013 00 00 0040 00 CE89 00 00 0000 00 00 D389CE0932773CDF8CCF0484
         // msgMap:[raw:catchall: 0000 0013 00 00 0040 00 CE89 00 00 0000 00 00 D389CE0932773CDF8CCF0484, profileId:0000, clusterId:0013, clusterInt:19, sourceEndpoint:00, destinationEndpoint:00, options:0040, messageType:00, dni:CE89, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[D3, 89, CE, 09, 32, 77, 3C, DF, 8C, CF, 04, 84]]
-    } else if((msgMap["clusterId"] == "0000" || msgMap["clusterId"] == "0001" || msgMap["clusterId"] == "0003" || msgMap["clusterId"] == "0400") && msgMap["command"] == "07") {
-        logging("CONFIGURE CONFIRMATION - description:${description} | parseMap:${msgMap}", 0)
-        
+    } else if((msgMap["clusterId"] == "0000" || msgMap["clusterId"] == "0001" || msgMap["clusterId"] == "0003" || msgMap["clusterId"] == "0400") && msgMap["command"] == "07" && msgMap["data"] != [] && msgMap["data"][0] == "00") {
+        logging("CONFIGURE CONFIRMATION - description:${description} | parseMap:${msgMap}", 1)
+        if(msgMap["clusterId"] == "0400") {
+            logging("Device confirmed LUX Report configuration ACCEPTED by the device", 100)
+        } else if(msgMap["clusterId"] == "0000") {
+            logging("Device confirmed BASIC Report configuration ACCEPTED by the device", 100)
+        } else if(msgMap["clusterId"] == "0001") {
+            logging("Device confirmed BATTERY Report configuration ACCEPTED by the device", 100)
+        } else if(msgMap["clusterId"] == "0003") {
+            logging("Device confirmed IDENTIFY Report configuration ACCEPTED by the device", 100)
+        }
         // Configure Confirmation event Description cluster 0001:
         // catchall: 0104 0001 01 01 0040 00 5DF0 00 00 0000 07 01 00
         // msgMap:[raw:catchall: 0104 0001 01 01 0040 00 5DF0 00 00 0000 07 01 00, profileId:0104, clusterId:0001, clusterInt:1, sourceEndpoint:01, destinationEndpoint:01, options:0040, messageType:00, dni:5DF0, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:07, direction:01, data:[00]]
@@ -124,13 +139,13 @@ ArrayList<String> parse(String description) {
         logging("Reset button pressed - description:${description} | parseMap:${msgMap}", 1)
         // The value from this command is the device model string
         setCleanModelName(newModelToSet=msgMap["value"])
-        sendZigbeeCommands(configureAdditional() + zigbee.readAttribute(CLUSTER_POWER, 0x0020))
+        sendZigbeeCommands(configureAdditional())
         refresh()
         //sendZigbeeCommands(zigbee.readAttribute(CLUSTER_POWER, 0x0020))
         // Reset button event Description:
         // read attr - raw: 5DF00100002C050042126C756D692E73656E5F696C6C2E6D676C3031, dni: 5DF0, endpoint: 01, cluster: 0000, size: 2C, attrId: 0005, encoding: 42, command: 0A, value: 126C756D692E73656E5F696C6C2E6D676C3031
     } else if(msgMap["clusterId"] == "0006") {
-        logging("Match Descriptor Request - description:${description} | parseMap:${msgMap}", 0)
+        logging("Match Descriptor Request - description:${description} | parseMap:${msgMap}", 1)
         // This is usually the 0x0019 OTA Upgrade Request, safe to ignore
 
         // Data == data:[D5, FD, FF, 04, 01, 01, 19, 00, 00] == OTA Upgrade Request
@@ -138,7 +153,7 @@ ArrayList<String> parse(String description) {
         // catchall: 0000 0006 00 00 0040 00 F0AE 00 00 0000 00 00 D5FDFF040101190000
         // msgMap:[raw:catchall: 0000 0006 00 00 0040 00 F0AE 00 00 0000 00 00 D5FDFF040101190000, profileId:0000, clusterId:0006, clusterInt:6, sourceEndpoint:00, destinationEndpoint:00, options:0040, messageType:00, dni:F0AE, isClusterSpecific:false, isManufacturerSpecific:false, manufacturerId:0000, command:00, direction:00, data:[D5, FD, FF, 04, 01, 01, 19, 00, 00]]
     } else if(msgMap["clusterId"] == "0003" && msgMap["command"] == "01") {
-        logging("IDENTIFY QUERY - description:${description} | parseMap:${msgMap}", 0)
+        logging("IDENTIFY QUERY - description:${description} | parseMap:${msgMap}", 1)
         // This is responded to with a Manufacturer Specific command
         // Command: Default Response
         sendZigbeeCommands(["he raw ${device.deviceNetworkId} 1 1 0xFCC0 {04 6E 12 00 0B 03 83}"])  // 12 00 0B = the 00 is replaced with the sequence number
@@ -153,23 +168,25 @@ ArrayList<String> parse(String description) {
         Integer oldRaw = oldLux == null ? null : oldLux == 0 ? 0 : Math.log10(oldLux + 1) * 10000
         lux = lux.setScale(1, BigDecimal.ROUND_HALF_UP)
         if(oldLux != null) oldLux = oldLux.setScale(1, BigDecimal.ROUND_HALF_UP)
-
+        BigDecimal luxChange = null
         if(oldRaw == null) {
-            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRaw, old lux: $oldLux)", 1)
+            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRawold lux: $oldLux)", 1)
         } else {
-            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRaw, lower: ${oldRaw - variance}, upper: ${oldRaw + variance}, old lux: $oldLux)", 1)
+            luxChange = Math.pow(10, Math.abs(oldRaw - rawValue) / 10000.0) - 1.0
+            luxChange = luxChange.setScale(1, BigDecimal.ROUND_HALF_UP)
+            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRaw, diff: ${oldRaw - rawValue}, lower: ${oldRaw - variance}, upper: ${oldRaw + variance}, old lux: $oldLux)", 1)
         }
         
         if(oldLux == null || rawValue < oldRaw - variance || rawValue > oldRaw + variance) {
-            logging("Sending lux event", 100)
+            logging("Sending lux event (lux: $lux)", 100)
             sendEvent(name:"illuminance", value: lux, unit: "lux", isStateChange: true)
         } else {
-            logging("SKIPPING lux event", 100)
+            logging("SKIPPING lux event since change wasn't large enough (lux: $lux, change: $luxChange)", 100)
         }
         // Lux event Description:
         // read attr - raw: 5DF00104000A0000219F56, dni: 5DF0, endpoint: 01, cluster: 0400, size: 0A, attrId: 0000, encoding: 21, command: 0A, value: 9F56
     } else if(msgMap["cluster"] == "0000" && (msgMap["attrId"] == "FF01" || msgMap["attrId"] == "FF02")) {
-        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 100)
+        logging("KNOWN event (Xiaomi/Aqara specific data structure with battery data) - description:${description} | parseMap:${msgMap}", 1)
         // Xiaomi/Aqara specific data structure, contains battery info
     } else if(msgMap["cluster"] == "0001" && msgMap["attrId"] == "0020") {
         logging("Battery voltage received - description:${description} | parseMap:${msgMap}", 1)
@@ -202,7 +219,7 @@ ArrayList<String> configureAdditional() {
     // List configureReporting(Integer clusterId, Integer attributeId, Integer dataType, Integer minReportTime, 
     //        Integer maxReportTime, Integer reportableChange = null, Map additionalParams=[:], 
     //        int delay = STANDARD_DELAY_INT)
-    Integer msDelay = 150
+    Integer msDelay = 50
     ArrayList<String> cmd = [
 		"zdo bind ${device.deviceNetworkId} 0x01 0x01 0x0000 {${device.zigbeeId}} {}", "delay $msDelay",
         "zdo bind ${device.deviceNetworkId} 0x01 0x01 0x0001 {${device.zigbeeId}} {}", "delay $msDelay",
@@ -211,14 +228,19 @@ ArrayList<String> configureAdditional() {
 		"zdo send ${device.deviceNetworkId} 0x01 0x01", "delay $msDelay"
     ]
     // CLUSTER: ILLUMINANCE
-    cmd += zigbee.configureReporting(0x0400, 0x0000, 0x21, (secondsMinLux == null ? 10 : secondsMinLux).intValue(), 3600, 200, [:], msDelay)
+    cmd += zigbee.configureReporting(0x0400, 0x0000, 0x21, (secondsMinLux == null ? 10 : secondsMinLux).intValue(), 3600, 300, [:], msDelay)
     // CLUSTER: POWER, 60 min report interval (original default 5), 3600 max report interval (original default 3600), Voltage measured: 0.1V
     cmd += zigbee.configureReporting(0x0001, 0x0020, 0x20, 3600, 3600, null, [:], msDelay)
-    // CLUSTER: BASIC (This seems to be ignored)
-	cmd += zigbee.configureReporting(0x0000, 0x0005, 0xff, 30, 3600, null, [:], msDelay)
-    // CLUSTER: IDENTIFY (This seems to be ignored)
-    cmd += zigbee.configureReporting(0x0003, 0x0000, 0xff, 0, 0, null, [:], msDelay)
-	
+    // CLUSTER: BASIC (Response is unreportable attribute, so no use setting this)
+	//cmd += zigbee.configureReporting(0x0000, 0x0005, 0xff, 30, 3600, null, [:], msDelay)
+    // CLUSTER: IDENTIFY (Response is unreportable attribute, so no use setting this)
+    //cmd += zigbee.configureReporting(0x0003, 0x0000, 0xff, 0, 0, null, [:], msDelay)
+    
+    // Request the current lux value
+	cmd += zigbeeReadAttribute(0x0400, 0x0000)
+    // Request the current Battery level
+    cmd += zigbeeReadAttribute(0x0001, 0x0020)
+
 	//cmd += zigbee.writeAttribute(CLUSTER_BASIC, 0xFF29, 0x10, 0x01, [mfgCode: "0x126E"])
     logging("configure cmd=${cmd}", 1)
     return cmd
