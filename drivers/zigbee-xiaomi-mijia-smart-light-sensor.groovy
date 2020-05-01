@@ -106,7 +106,7 @@ ArrayList<String> parse(String description) {
         // catchall: 0000 8021 00 00 0040 00 5DF0 00 00 0000 00 00 9000
         // catchall: 0000 8021 00 00 0040 00 5DF0 00 00 0000 00 00 9100
         if(msgMap["data"] != []) {
-            logging("Received BIND Confirmation with sequence number 0x${msgMap["data"][0]} (a total of FOUR unique numbers expected, same number may repeat).", 100)
+            logging("Received BIND Confirmation with sequence number 0x${msgMap["data"][0]} (a total minimum of FOUR unique numbers expected, same number may repeat).", 100)
         }
     } else if(msgMap["clusterId"] == "8034") {
         logging("CLUSTER LEAVE REQUEST - description: ${description} | parseMap:${msgMap}", 0)
