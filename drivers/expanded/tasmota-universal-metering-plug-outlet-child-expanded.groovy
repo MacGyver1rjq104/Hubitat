@@ -196,7 +196,7 @@ void deviceCommand(cmd) {
 
 void setLogsOffTask(boolean noLogWarning=false) {
     // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
+	if (debugLogging == true) {
         if(noLogWarning==false) {
             if(runReset != "DEBUG") {
                 log.warn "Debug logging will be disabled in 30 minutes..."

@@ -253,9 +253,9 @@ ArrayList<String> parse(String description) {
         if(oldRaw == null) {
             logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRawold lux: $oldLux)", 1)
         } else {
-            luxChange = Math.pow(10, Math.abs(oldRaw - rawValue) / 10000.0) - 1.0
+            luxChange = oldLux - lux
             luxChange = luxChange.setScale(1, BigDecimal.ROUND_HALF_UP)
-            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRaw, diff: ${oldRaw - rawValue}, lower: ${oldRaw - variance}, upper: ${oldRaw + variance}, old lux: $oldLux)", 1)
+            logging("Lux: $lux (raw: $rawValue, oldRaw: $oldRaw, diff: ${oldLux - lux}, lower: ${oldRaw - variance}, upper: ${oldRaw + variance}, old lux: $oldLux)", 1)
         }
         
         if(oldLux == null || rawValue < oldRaw - variance || rawValue > oldRaw + variance) {
@@ -459,7 +459,7 @@ void deviceCommand(cmd) {
 
 void setLogsOffTask(boolean noLogWarning=false) {
     // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
+	if (debugLogging == true) {
         if(noLogWarning==false) {
             if(runReset != "DEBUG") {
                 log.warn "Debug logging will be disabled in 30 minutes..."
