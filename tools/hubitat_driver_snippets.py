@@ -356,7 +356,7 @@ private boolean logging(message, level) {
     if (infoLogging == null || infoLogging == true) {
         logLevelLocal = 100
     }
-    if (debugLogging == null || debugLogging == true) {
+    if (debugLogging == true) {
         logLevelLocal = 1
     }
     //}

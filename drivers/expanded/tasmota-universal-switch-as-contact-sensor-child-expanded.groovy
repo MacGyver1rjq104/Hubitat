@@ -1,7 +1,7 @@
 /**
  *  Copyright 2020 Markus Liljergren
  *
- *  Version: v1.0.1.0428Tb
+ *  Version: v1.0.1.0501Tb
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ metadata {
     preferences {
         // BEGIN:getDefaultMetadataPreferences()
         // Default Preferences
-        input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
+        input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" , defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
         input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
         // END:  getDefaultMetadataPreferences()
 
@@ -123,7 +123,7 @@ void refresh() {
 private String getDriverVersion() {
     comment = ""
     if(comment != "") state.comment = comment
-    String version = "v1.0.1.0428Tb"
+    String version = "v1.0.1.0501Tb"
     logging("getDriverVersion() = ${version}", 100)
     sendEvent(name: "driver", value: version)
     updateDataValue('driver', version)
@@ -164,7 +164,7 @@ void deviceCommand(cmd) {
 
 void setLogsOffTask(boolean noLogWarning=false) {
     // disable debug logs after 30 min, unless override is in place
-	if (debugLogging == true || debugLogging == null || (logLevel != "0" && logLevel != "100")) {
+	if (debugLogging == true || (logLevel != "0" && logLevel != "100")) {
         if(noLogWarning==false) {
             if(runReset != "DEBUG") {
                 log.warn "Debug logging will be disabled in 30 minutes..."
@@ -781,7 +781,7 @@ private boolean logging(message, level) {
     if (infoLogging == null || infoLogging == true) {
         logLevelLocal = 100
     }
-    if (debugLogging == null || debugLogging == true) {
+    if (debugLogging == true) {
         logLevelLocal = 1
     }
     //}

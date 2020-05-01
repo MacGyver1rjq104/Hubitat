@@ -213,7 +213,7 @@ input(name: "runReset", description: addDescriptionDiv("DISABLE BEFORE RELEASE")
 """
     return """
 // Default Preferences""" + includedRunReset + """
-input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
+input(name: "debugLogging", type: "bool", title: addTitleDiv("Enable debug logging"), description: "" """ + includedCSS + """, defaultValue: false, submitOnChange: true, displayDuringSetup: false, required: false)
 input(name: "infoLogging", type: "bool", title: addTitleDiv("Enable descriptionText logging"), description: "", defaultValue: true, submitOnChange: true, displayDuringSetup: false, required: false)
 """
 
